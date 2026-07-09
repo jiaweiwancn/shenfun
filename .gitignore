@@ -33,6 +33,7 @@ build/
 var/
 
 *.*workspace
+.DS_Store
 
 # Unit test / coverage reports
 .coverage
