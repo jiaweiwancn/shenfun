@@ -1,0 +1,291 @@
+{
+  "description": "Selected-mode MKM channel-resolvent proof-of-concept workflow.",
+  "target_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/MKM_production_64_64_32_target_t60_t180.h5",
+  "constraint_file": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/MKM_constraints_N64_64_32_cheb_quadrature_spectral.h5",
+  "output_dir": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes",
+  "selected_modes": [
+    [
+      1,
+      0
+    ],
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      1
+    ]
+  ],
+  "n_singular": 6,
+  "re_tau": 180.0,
+  "csd": {
+    "mode": "computed_csd",
+    "path": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_modal_csd_selected_modes.h5",
+    "summary": {
+      "output": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_modal_csd_selected_modes.h5",
+      "source": "target_modal_u_hat",
+      "n_modes": 3,
+      "n_times": 1201,
+      "modal_dim": 192,
+      "n_omega": 512,
+      "sample_dt": 0.09999999999999432,
+      "segment_length": 512,
+      "n_segments": 3,
+      "window": "hann",
+      "max_parseval_relative_error": 2.93257888998019e-15
+    }
+  },
+  "modes": [
+    {
+      "mode_index": [
+        1,
+        0
+      ],
+      "kappa": 1.0,
+      "lambda": 0.0,
+      "omega": [
+        0.12271846303085827,
+        0.24543692606171655,
+        0.3681553890925748,
+        0.4908738521234331
+      ],
+      "omega_selection": {
+        "kind": "positive_low_frequency_csd_bins",
+        "omega_count": 4,
+        "source_csd": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_modal_csd_selected_modes.h5"
+      },
+      "resolvent_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_i1_j0.h5",
+      "resolvent_summary": {
+        "leading_singular_values": [
+          0.1458904229489414,
+          0.14797344245829502,
+          0.1501077605529072,
+          0.152295005374151
+        ],
+        "singular_values_shape": [
+          4,
+          6
+        ],
+        "max_response_constraint_residual": 4.464121003370511e-15,
+        "max_forcing_constraint_residual": 4.347218323633372e-15,
+        "max_response_energy_norm_error": 2.220446049250313e-15,
+        "max_forcing_energy_norm_error": 2.6645352591003757e-15
+      },
+      "compute_resolvent_summary": {
+        "output": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_i1_j0.h5",
+        "mode_i": 1,
+        "mode_j": 0,
+        "kappa": 1.0,
+        "lambda": 0.0,
+        "rank": 70,
+        "nullity": 122,
+        "stored_n_singular": 6,
+        "energy_orthonormality_error": 3.547976899407312e-14,
+        "basis_constraint_residual": 2.965518954478129e-14,
+        "max_response_constraint_residual": 4.464121003370511e-15,
+        "max_forcing_constraint_residual": 4.347218323633372e-15,
+        "max_response_energy_norm_error": 2.220446049250313e-15,
+        "max_forcing_energy_norm_error": 2.6645352591003757e-15
+      },
+      "projection_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_projection_i1_j0.h5",
+      "projection_summary": {
+        "leading_energy_fraction": [
+          0.10802235934708763,
+          0.03770239849431021,
+          0.1232268679975619,
+          0.05651144141378987
+        ],
+        "final_cumulative_energy_fraction": [
+          0.3536011732687236,
+          0.24194470947100352,
+          0.4078928378139858,
+          0.4066973034373541
+        ],
+        "energy_total": [
+          0.0005575417412793271,
+          0.00046772474139159193,
+          0.0004614835151445175,
+          0.0004098453434236529
+        ],
+        "max_frequency_match_error": 0.0,
+        "mode_match_error": 0.0,
+        "negative_fraction_count": 0
+      },
+      "figure_dir": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j0",
+      "figures": [
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j0/mkm_resolvent_mode_shapes.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j0/mkm_resolvent_gain_bode.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j0/mkm_resolvent_peak_location_gain.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j0/mkm_resolvent_reconstructed_fields.pdf"
+      ]
+    },
+    {
+      "mode_index": [
+        1,
+        1
+      ],
+      "kappa": 1.0,
+      "lambda": 2.0,
+      "omega": [
+        0.12271846303085827,
+        0.24543692606171655,
+        0.3681553890925748,
+        0.4908738521234331
+      ],
+      "omega_selection": {
+        "kind": "positive_low_frequency_csd_bins",
+        "omega_count": 4,
+        "source_csd": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_modal_csd_selected_modes.h5"
+      },
+      "resolvent_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_i1_j1.h5",
+      "resolvent_summary": {
+        "leading_singular_values": [
+          0.18365393490360493,
+          0.18671863765772562,
+          0.18987104316587386,
+          0.1931145082634143
+        ],
+        "singular_values_shape": [
+          4,
+          6
+        ],
+        "max_response_constraint_residual": 3.0166157377515812e-15,
+        "max_forcing_constraint_residual": 2.9972588024876527e-15,
+        "max_response_energy_norm_error": 1.887379141862766e-15,
+        "max_forcing_energy_norm_error": 1.9984014443252818e-15
+      },
+      "compute_resolvent_summary": {
+        "output": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_i1_j1.h5",
+        "mode_i": 1,
+        "mode_j": 1,
+        "kappa": 1.0,
+        "lambda": 2.0,
+        "rank": 70,
+        "nullity": 122,
+        "stored_n_singular": 6,
+        "energy_orthonormality_error": 3.5083503610383663e-14,
+        "basis_constraint_residual": 2.8564341809883254e-14,
+        "max_response_constraint_residual": 3.0166157377515812e-15,
+        "max_forcing_constraint_residual": 2.9972588024876527e-15,
+        "max_response_energy_norm_error": 1.887379141862766e-15,
+        "max_forcing_energy_norm_error": 1.9984014443252818e-15
+      },
+      "projection_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_projection_i1_j1.h5",
+      "projection_summary": {
+        "leading_energy_fraction": [
+          0.1582740573672422,
+          0.16135648974662462,
+          0.11434558847025932,
+          0.0344719656901099
+        ],
+        "final_cumulative_energy_fraction": [
+          0.38704159407300937,
+          0.4728087772901037,
+          0.4901938694778661,
+          0.3171789188894796
+        ],
+        "energy_total": [
+          0.00038382478749086175,
+          0.0003723825277848606,
+          0.00048316094617010955,
+          0.00037959430743391006
+        ],
+        "max_frequency_match_error": 0.0,
+        "mode_match_error": 0.0,
+        "negative_fraction_count": 0
+      },
+      "figure_dir": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j1",
+      "figures": [
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j1/mkm_resolvent_mode_shapes.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j1/mkm_resolvent_gain_bode.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j1/mkm_resolvent_peak_location_gain.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i1_j1/mkm_resolvent_reconstructed_fields.pdf"
+      ]
+    },
+    {
+      "mode_index": [
+        2,
+        1
+      ],
+      "kappa": 2.0,
+      "lambda": 2.0,
+      "omega": [
+        0.12271846303085827,
+        0.24543692606171655,
+        0.3681553890925748,
+        0.4908738521234331
+      ],
+      "omega_selection": {
+        "kind": "positive_low_frequency_csd_bins",
+        "omega_count": 4,
+        "source_csd": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_modal_csd_selected_modes.h5"
+      },
+      "resolvent_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_i2_j1.h5",
+      "resolvent_summary": {
+        "leading_singular_values": [
+          0.09207814428393302,
+          0.09289365438743287,
+          0.09372171359935973,
+          0.09456257957829362
+        ],
+        "singular_values_shape": [
+          4,
+          6
+        ],
+        "max_response_constraint_residual": 4.889762177930755e-15,
+        "max_forcing_constraint_residual": 4.712707594661056e-15,
+        "max_response_energy_norm_error": 2.220446049250313e-15,
+        "max_forcing_energy_norm_error": 3.1086244689504383e-15
+      },
+      "compute_resolvent_summary": {
+        "output": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_i2_j1.h5",
+        "mode_i": 2,
+        "mode_j": 1,
+        "kappa": 2.0,
+        "lambda": 2.0,
+        "rank": 70,
+        "nullity": 122,
+        "stored_n_singular": 6,
+        "energy_orthonormality_error": 3.4192965419920795e-14,
+        "basis_constraint_residual": 2.92175559515772e-14,
+        "max_response_constraint_residual": 4.889762177930755e-15,
+        "max_forcing_constraint_residual": 4.712707594661056e-15,
+        "max_response_energy_norm_error": 2.220446049250313e-15,
+        "max_forcing_energy_norm_error": 3.1086244689504383e-15
+      },
+      "projection_h5": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_projection_i2_j1.h5",
+      "projection_summary": {
+        "leading_energy_fraction": [
+          0.0278054386573875,
+          0.05907428072801848,
+          0.05728805776957021,
+          0.05390665129818723
+        ],
+        "final_cumulative_energy_fraction": [
+          0.2606767022274833,
+          0.21585295106880556,
+          0.2659050081311123,
+          0.23304115884146676
+        ],
+        "energy_total": [
+          6.242864085142223e-05,
+          6.583395306275542e-05,
+          6.56290152829362e-05,
+          7.011496896751088e-05
+        ],
+        "max_frequency_match_error": 0.0,
+        "mode_match_error": 0.0,
+        "negative_fraction_count": 0
+      },
+      "figure_dir": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i2_j1",
+      "figures": [
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i2_j1/mkm_resolvent_mode_shapes.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i2_j1/mkm_resolvent_gain_bode.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i2_j1/mkm_resolvent_peak_location_gain.pdf",
+        "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/figures_i2_j1/mkm_resolvent_reconstructed_fields.pdf"
+      ]
+    }
+  ],
+  "manifest_path": "/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/channel_resolvent_selected_modes/MKM_channel_resolvent_selected_modes_manifest.json"
+}
