@@ -1,0 +1,684 @@
+Planned numerical sampling and constraint construction for an
+MKM channel DNS at Reτ = 395
+Prepared for the Shenfun MKM channel-flow workflow
+27 July 2026
+
+Abstract
+This note specifies a gated plan for a new turbulent-channel direct numerical simulation
+at nominal friction Reynolds number Reτ = 395. It adapts the existing two-stage Shenfun
+MKM workflow to the mesh and domain used by Moser, Kim, and Mansour for their
+corresponding case. Particular attention is paid to the reference paper’s odd wall-normal
+count, the distinction between the reference Chebyshev–Gauss–Lobatto convention and
+Shenfun’s Chebyshev–Gauss quadrature grid, the even-size requirement of the optimized
+Shenfun biharmonic solver, the constant-flux target, integer de-aliasing sizes, measured wall
+stress, sampling convergence, constraint construction, and the much larger storage cost of an
+all-plane temporal record. The proposed persistent representation stores the two independent
+MKM spectral state variables and the required zero horizontal modes, from which all three
+velocities on all 192 horizontal planes are reconstructed without approximation beyond solver
+roundoff. This is a planning document: no Reτ = 395 production simulation or result is
+claimed here.
+
+Status: the Ubuntu and CentOS 18-plane and 192-plane numerical/I/O gates are verified.
+The former full-resolution ∆t = 2.5 × 10−4 pilot was unstable; the refined-step pilot, physical
+stationarity, and resolution-acceptance gates remain pending.
+
+1
+
+Objective and reference case
+
+Let x ∈ [0, Lx ) be streamwise, z ∈ [0, Lz ) be spanwise, and y ∈ [−h, h] be wall-normal. The
+proposed nondimensional channel has
+h = 1,
+
+Lx = 2πh,
+
+Lz = πh,
+
+(1)
+
+with periodicity in x and z and no slip at y = ±h. Velocities are ordered as
+u = (ux , uz , uy )T
+in the target files: streamwise, spanwise, and wall-normal. The internal MKM HDF5 groups
+remain
+u0 = uy ,
+u1 = ux ,
+u2 = uz .
+Moser, Kim, and Mansour reported the parameters in Table 1. Their nominal case name is
+Reτ = 395, while the measured value in the paper and statistical database is 392.24.
+The source paper states that domain sizes were chosen so two-point correlations were
+essentially zero at half-box separation and that resolution was chosen so energy spectra were
+sufficiently small at the largest retained wavenumbers. It also reports at least 13 wall-normal
+points below y + = 10. These are validation conditions, not merely historical metadata.
+The primary reference data are available from the University of Texas turbulence database:
+https://turbulence.oden.utexas.edu/MKM_1999.html.
+1
+
+Table 1: Moser–Kim–Mansour reference parameters for the nominal Reτ = 395 channel.
+Quantity
+
+Reference value
+
+Actual Reτ
+(Lx , Lz )/h
+Paper order Nx × Ny × Nz
+∆x+
+∆z +
+∆yc+
+
+2
+
+Proposed Shenfun mesh
+
+2.1
+
+Ordering and nominal spacings
+
+392.24
+(2π, π)
+256 × 193 × 192
+approximately 10.0
+approximately 6.5
+approximately 6.5
+
+The current driver uses solver order
+(Nwall , Nstream , Nspan ).
+The user-selected Shenfun baseline is
+--n 192 256 192 .
+
+(2)
+
+At nominal Reτ = 395, its two uniform-direction spacings are
+Lx
+
+uτ
+2π(395)
+=
+= 9.69476,
+Nstream ν
+256
+π(395)
+Lz uτ
+=
+= 6.46317.
+∆z + =
+Nspan ν
+192
+
+∆x+ =
+
+The saved wall-normal mesh is Shenfun’s Chebyshev–Gauss quadrature grid,
+
+
+(2m + 1)π
+ym = cos
+,
+m = 0, . . . , Nwall − 1.
+2Nwall
+
+(3)
+(4)
+
+(5)
+
+For even Nwall = 192, the centerline lies midway between the two central Gauss points. The gap
+across the center, distance of either central point from the center, and first saved distance from
+a wall are
+
+
+π
++
+∆yc = 2(395) sin
+= 6.46310,
+(6)
+2(192)
+
+
+π
++
+ynearest center = 395 sin
+= 3.23155,
+(7)
+2(192)
+
+
+
+π
+y1+ = 395 1 − cos
+= 0.01322.
+(8)
+2(192)
+There are 14 positive-half-channel Gauss nodes with distance below y + = 10 from the nearest
+wall.
+
+2.2
+
+Why the paper uses 193 but Shenfun uses 192
+
+The paper does not identify an odd count as a separate physical requirement. The most direct
+numerical explanation is the conventional Chebyshev–Gauss–Lobatto representation. If the
+maximum polynomial degree is even, the number of endpoint-including nodal values is one greater
+and hence odd. Counts 129, 193, and 257 correspond to even interval/degree counts 128, 192,
+2
+
+and 256; this also includes both walls and the centerline and is convenient for cosine-transform
+implementations.
+Shenfun’s grid in Eq. (5) is not the same nodal family: the wall values are excluded and no slip
+is imposed through composite Galerkin bases. Although its transforms and bases can represent
+odd sizes, the optimized Chebyshev biharmonic solver used by the MKM wall-normal-velocity
+equation splits the coefficient system into equal even/odd parity blocks. A four-rank Ubuntu
+test at Nwall = 17 was finite after initialization but generated non-finite velocity coefficients in
+the first Runge–Kutta substage. Its matched Nwall = 18 control remained finite for 40 steps and
+reconstructed every saved velocity value exactly from the independent state.
+The current solver must therefore use an even wall-normal size. The selected Nwall = 192 is
+one point, or approximately 0.52 percent, below the paper’s count. It retains 14 saved points
+per wall below y + = 10 and gives a center gap essentially equal to the reference center spacing.
+The two Fourier counts should remain even. This retains efficient FFT sizes, the expected
+real-transform and Nyquist conventions, and convenient MPI factorizations.
+
+2.3
+
+Integer de-aliasing size
+
+The nonlinear terms use padded transforms. The current implementation replaces a requested
+padding factor p by an integer size
+Np = ⌊pN ⌋.
+A literal p = 1.5 at N = 192 gives the exact integer padded size 288. The proposed integer
+padded sizes are
+(Np,y , Np,x , Np,z ) = (288, 384, 288),
+(9)
+so the run card should use
+--padding-factor 1.5 1.5 1.5.
+
+3
+
+(10)
+
+Reynolds number and constant-flux target
+
+The nominal nondimensional inputs are
+h = 1,
+
+uτ,ref = 1,
+
+ν=
+
+1
+.
+395
+
+(11)
+
+However, prescribing ν does not by itself demonstrate that the developed constant-flux solution
+has Reτ = 395. If the time-averaged wall shear is τ w , the measured friction velocity and Reynolds
+number are
+√
+uτ,meas h
+uτ,meas = τ w ,
+Reτ,meas =
+.
+(12)
+ν
+Both walls must be evaluated and their symmetry reported.
+The current Reτ = 180 runner defaults to an Reτ = 180 bulk velocity and must not be
+reused unchanged. Numerical integration of the official MKM Reτ = 392.24 mean profile gives
+the planning value
+Ub
+= 17.5447511436.
+(13)
+uτ
+For Eq. (1), the corresponding integrated flux is
+Q = 2hLx Lz Ub = 4π 2 Ub = 692.639012411.
+
+(14)
+
+This is an initial calibration target. The developed simulation is accepted only if Eq. (12) is
+within the agreed tolerance; otherwise Ub is adjusted and a calibration continuation is run.
+
+3
+
+4
+
+Initialization changes required before execution
+
+Changing only --re is insufficient. The present demo/MKM.py contains an Reτ = 180 initial
+centerline/profile constant, the old bulk-velocity default, and perturbation choices whose wallunit wavelengths change with Reynolds number. Before production, the run metadata must
+record:
+1. nominal Reτ , ν, target Ub , and integrated flux;
+2. the initial mean profile and its source;
+3. perturbation amplitudes and wavelengths in wall or outer units;
+4. the realized integer padded sizes;
+5. a checksum or version identifier for the reference profile.
+6. an all-plane state output path for the independent wall-normal velocity and wall-normal
+vorticity coefficients, the two separately evolved zero-horizontal-mode profiles, online block
+moments, and infrequent complete audit fields. The current runner exposes only one
+full-field modsave cadence, so this recorder and its decoder must be implemented and
+smoke-tested before stationary sampling.
+The recommended clean start interpolates the official MKM mean profile onto Eq. (5), reflects
+it across the centerline, and adds small resolved perturbations. The interpolated profile is only
+an initial condition and validation reference. It is not counted as new DNS evidence. The
+initialized velocity must pass divergence and no-slip checks after the same forward/backward
+projections used by the solver.
+
+5
+
+Preflight gates
+
+5.1
+
+Even-grid and restart smoke
+
+First run a small even wall-normal case
+(Nwall , Nstream , Nspan ) = (18, 32, 24),
+through initialization, a forced checkpoint, restart, quadrature HDF5 output, state reconstruction,
+and a complete NaN/Inf audit. The uninterrupted and restarted states must agree to solver
+tolerance.
+
+5.2
+
+Full-shape decomposition benchmark
+
+Allocate the unpadded shape (192, 256, 192) and padded shape (288, 384, 288) on the Linux
+server and take only a few steps without snapshots. Benchmark feasible MPI sizes, initially 16,
+32, and 64 ranks. The production rank count is selected from successful decomposition, memory,
+and step-time measurements.
+The isolated Ubuntu pilot completed two full-shape steps at all three rank counts. The 64rank one-sample I/O gate then reconstructed all 192 planes with maximum absolute component
+error 2.14 × 10−14 , maximum relative error 1.06 × 10−15 , maximum divergence 9.53 × 10−16 ,
+and no non-finite values. The independent-state and physical-velocity files were 152,594,328
+and 226,523,696 bytes, respectively. A reduced spin-up followed by two sampling segments also
+passed checkpoint restart, HDF5 append, state-shard continuity, and reconstruction checks.
+CentOS jobs 3201–3204 subsequently passed the 16-, 32-, and 64-rank allocation gates and the
+64-rank state-I/O gate. The requested scheduler policy allocates two SLURM tasks per launched
+MPI rank: a 64-rank run requests #SBATCH --ntasks=128, while the launcher explicitly uses
+mpiexec -n 64. The shared script validates and records this 2:1 allocation-to-launch ratio.
+4
+
+5.3
+
+Time-step pilot
+
+The full-resolution CentOS pilot in job 3206 used
+∆t = 2.5 × 10−4 .
+
+(15)
+
+This step is rejected. The reported CFL exceeded one at t = 0.1, approached 1.6, and the
+spanwise kinetic energy grew from 0.3907 to 12.8004 by t = 0.8. At t = 0.9, all 28,311,552 physical
+velocity values were non-finite. The minimum Chebyshev–Gauss wall spacing at Nwall = 192 is
+about one ninth of that at 64 points. Scaling the old Reτ = 180 step 5 × 10−4 by this ratio gives
+5.56 × 10−5 . The conservative candidate used in the revised scripts is therefore
+∆t = 5 × 10−5 .
+
+(16)
+
+The first full-mesh refined pilot ends at t = 1 and records diagnostics every 0.1 outer units.
+Finite values, CFL margin, energy, divergence, restart consistency, and high-wavenumber spectra
+determine acceptance.
+
+5.4
+
+Spatial-resolution acceptance
+
+The full-grid pilot must demonstrate:
+1. no high-wavenumber energy pile-up in either periodic direction;
+2. mean and Reynolds-stress profiles consistent with the MKM database;
+3. streamwise and spanwise two-point correlations nearly zero at half-box separation;
+4. at least 13 points below y + = 10;
+5. symmetry of the two channel halves;
+6. small divergence and no-slip constraint residuals.
+
+6
+
+Two-stage production sampling
+
+6.1
+
+Spin-up
+
+The development stage writes no target snapshots and forces a checkpoint at the end of each
+restartable segment. It records bulk flux, wall shear, measured Reτ , all three kinetic-energy
+components, divergence, CFL, mean profiles, Reynolds stresses, and spectral-tail ratios. After the
+refined-step t = 1 calibration, use five-outer-unit restart segments when the measured wall time
+fits the allocation. Candidate physical reviews are made at outer times 20, 40, 60, 80, 100, and
+120. The user-selected sampling start is fixed at t = 120, so no retained temporal sampling begins
+earlier. The old t = 20 spin-up is not automatically transferred to the higher-Reynolds-number
+case.
+A checkpoint is accepted only when bulk flux and measured Reτ are steady, both walls
+agree, energy components show no block drift, mean and Reynolds profiles have settled, and
+spectral/correlation checks pass. A planning calibration criterion is
+|Reτ,meas − 395|
+≤ 0.02.
+395
+
+5
+
+(17)
+
+6.2
+
+Stationary sampling
+
+The sampling stage restarts from the accepted t = 120 checkpoint into a separate velocity file
+and ends at t = 300. Thus
+tsample,start = 120,
+
+tsample,end = 300,
+
+Tsample = 180.
+
+(18)
+
+At the refined step these endpoints are DNS steps 2,400,000 and 6,000,000, respectively, so the
+stationary stage contains 3,600,000 DNS steps. The dense cadence used for temporal observables
+is
+∆ttemporal uτ /h = 0.005 .
+(19)
+For Eq. (16), this is one temporal sample every 100 DNS steps and
+∆t+
+temporal = Reτ ∆ttemporal = 1.975.
+
+(20)
+
+The corresponding temporal Nyquist angular frequency is
+ωNy h/uτ =
+
+π
+= 628.319.
+∆ttemporal
+
+(21)
+
+Dense full fields are not the primary temporal record. At the dense cadence the writer stores
+the complete independent MKM spectral state, from which all three velocity components are
+reconstructed on every one of the 192 wall-normal planes during postprocessing. All-wall mean
+and Reynolds-stress raw moments are also accumulated by time block as an independent audit.
+A complete physical audit velocity field is retained only every 10 outer time units, or every
+200000 DNS steps, and at the final accepted state. State data are written in 1000-sample shards
+(five outer time units), with a forced checkpoint every five outer units. Convergence is reviewed
+over accumulated 40-outer-time-unit blocks.
+A short pilot records temporal observables every 50 DNS steps (∆t = 0.0025, ∆t+ = 0.9875)
+and compares them with the same record decimated to 0.005. The production cadence is reduced
+to 0.0025 only if the 0.005 correlations or spectra show meaningful aliasing in the frequency
+band of interest.
+For the fixed 180-unit stationary window, Eq. (19) gives 36,000 samples. The all-plane
+temporal auto-correlations and auto-spectra are evaluated from reconstructed float64 velocity
+batches in the same time order used by the existing estimators. A Hann/Welch estimate with
+8,192-sample segments and 50 percent overlap has segment duration 40.96 and angular-frequency
+spacing about 0.1534. A full-record diagnostic periodogram has spacing about 0.03491.
+The datasets lag_covariance/lag_0 and lag_covariance/lag_1 are not required and will
+not be generated. Any legacy postprocessor invocation uses --max-lag -1.
+Candidate retained windows are evaluated with at least 12 blocks. The first field-statistics
+gate is the established five-percent tolerance for both mean and Reynolds-stress profiles. A
+three-percent sensitivity check is preferred before final acceptance. Scalar energy drift is reported
+separately rather than hidden by the field-profile result.
+
+6.3
+
+Exact independent-state record
+
+The KMM implementation advances the wall-normal velocity coefficient field u
+by in its biharmonic
+space and the wall-normal vorticity ηby in its Dirichlet space. For a nonzero horizontal wavenumber
+pair (κ, λ), the same reconstruction used by demo/ChannelFlow.py is
+κDy u
+by + λb
+ηy
+,
+2
+2
+κ +λ
+λDy u
+by − κb
+ηy
+.
+u
+bz = i
+2
+2
+κ +λ
+
+u
+bx = i
+
+6
+
+(22)
+(23)
+
+The two (κ, λ) = (0, 0) profiles, u
+bx (y; 0, 0) and u
+bz (y; 0, 0), are evolved by separate one-dimensional
+equations and must be saved explicitly. Therefore each temporal sample contains
+{b
+uy , ηby , u
+bx ( · ; 0, 0), u
+bz ( · ; 0, 0)} .
+Restoring these objects and applying the solver’s own derivative, wavenumber, zero-mode
+insertion, and backward-transform paths recovers every velocity component at every saved
+wall-normal point. The state record uses complex128/float64 and the native real-to-complex
+Fourier half-spectrum. Wall-normal subsampling, horizontal mode truncation, reduced precision,
+and lossy compression are excluded from the baseline.
+
+7
+
+Sampled target objects
+
+For retained samples tn , the horizontal/time mean is
+uα (ym ) =
+
+X
+1
+uα (xj , zℓ , ym , tn ).
+Ns Nx Nz
+
+(24)
+
+n,j,ℓ
+
+With u′α = uα − uα , the Reynolds profile is
+Rαβ (ym ) =
+
+X
+1
+u′α (xj , zℓ , ym , tn )u′β (xj , zℓ , ym , tn ).
+Ns Nx Nz
+
+(25)
+
+n,j,ℓ
+
+The normalized horizontal Fourier coefficients are
+1 X ′
+u
+bα (ym ; κp , λq , tn ) =
+uα (xj , zℓ , ym , tn )e−i(κp xj +λq zℓ ) .
+Nx Nz
+
+(26)
+
+j,ℓ
+
+For one mode the target stacks the three components level by level into
+qbpq = [b
+ux (y0 ), u
+bz (y0 ), u
+by (y0 ), . . . , u
+bx (y191 ), u
+bz (y191 ), u
+by (y191 )]T ∈ C576 .
+
+(27)
+
+The equal-time covariance is
+(0)
+Bpq
+=
+
+8
+
+1 X
+qbpq (tn )qbpq (tn )∗ .
+Ns n
+
+(28)
+
+Constraint on the even Chebyshev–Gauss grid
+
+For each horizontal mode, define component selectors
+bx ,
+Ex qb = u
+
+by ,
+Ey qb = u
+
+bz ,
+Ez qb = u
+
+where here Ey selects wall-normal velocity and Ez selects spanwise velocity in physical notation.
+In the target implementation the selector names must follow the stored component metadata
+rather than ambiguous coordinate letters.
+Let Dy be the barycentric nodal derivative on the 192 Gauss points and let B∂ ∈ R2×192
+interpolate those points to y = ±1. The modal divergence and boundary rows are
+Gdiv (κ, λ) = iκEstream + iλEspan + Dy Ewall ,
+
+
+B∂ Estream
+G∂ =  B∂ Espan  .
+B∂ Ewall
+7
+
+(29)
+(30)
+
+Thus
+
+
+
+
+Gdiv
+Graw (κ, λ) =
+∈ C198×576 .
+G∂
+
+(31)
+
+If
+Graw = U ΣV ∗ ,
+and Vr contains the right singular vectors retained at the documented relative tolerance, the
+saved row-orthonormal constraint is
+e = V ∗,
+G
+r
+
+eG
+e ∗ = I, qquadG
+e qb = 0.
+G
+
+(32)
+
+The expected generic row count is 198, with two dependencies commonly present at the zero
+horizontal mode; the actual rank table must be computed and saved, not assumed.
+
+9
+
+Storage scaling and processing decision
+
+The proposed mesh has 49,152 horizontal modes and modal dimension 576. The uncompressed
+estimates in Table 2 show that the old output policy cannot be copied blindly.
+Table 2: Approximate uncompressed storage for the proposed mesh.
+Object
+
+Size
+
+One three-component physical snapshot
+36,000 physical velocity samples
+One independent spectral-state sample
+36,000 independent state samples
+18 complete audit fields
+Full equal-time modal/B0_DNS
+
+0.210938 GiB
+7.4158 TiB
+0.142093 GiB
+4.9954 TiB
+3.797 GiB
+approximately 243 GiB
+
+For the real-to-complex horizontal layout, the nonredundant coefficient extent is 192×256×97.
+Two complex128 state arrays and two float64 zero-mode profiles contain 152,570,880 bytes per
+sample. This exact representation saves approximately 32.64 percent relative to three dense
+physical components while retaining every horizontal plane. State files are split into 1000-sample
+shards, each approximately 142.09 GiB before compression.
+Only representation-preserving reductions are admitted: the native Fourier half-spectrum,
+the independent state variables, and benchmarked lossless compression. Compression ratios
+are not assumed in capacity planning. Float32, lossy filters, mode truncation, wall-normal
+subsampling, and further temporal decimation are excluded unless a separate error study is
+accepted. The server allocation should be at least 7 TiB for the baseline state, checkpoints,
+audit fields, derived outputs, and safety headroom, excluding any large disposable reconstruction
+cache. A full B0 requires an explicit scientific need and an additional I/O benchmark. Lag
+covariances are omitted unconditionally.
+The detailed sufficient-data construction and its numerical-equivalence test are recorded in
+scripts/mkm_dns_target/TEMPORAL_SAMPLING_REMEDY_Re_tau_395.md.
+Before production, at least 512 samples are dual-written as conventional physical fields and as
+independent state. Reconstructed coefficients, physical velocities, mean/Reynolds profiles, and
+temporal correlations and spectra at all 192 planes must agree to bitwise identity where possible
+and otherwise to a documented roundoff/FFT-order tolerance. The test must include the zero
+horizontal mode, two MPI decompositions, shard interruption recovery, lossless decompression
+checksums, and measured write throughput. The existing constraint builder and postprocessors
+must also be benchmarked and, if necessary, optimized at 49,152 horizontal modes.
+
+8
+
+10
+
+Planned command card
+
+After the preflight gates have passed, the common run settings are intended to resolve as follows:
+TMPDIR=/media/jay/data1/tmp
+ENV=/media/jay/data1/conda_envs/shenfun_dns_np126_20260702
+REPO=/media/jay/data1/shenfun
+OUT=/media/jay/data1/shenfun_dns_runs/
+production_mkm_Re395_N192_256_192
+PREFIX=MKM_production_Re395_N192_256_192
+--n 192 256 192
+--domain -1 1 0 6.283185307179586 0 3.141592653589793
+--re 395
+--bulk-velocity 17.54475114359453
+--dt 0.00005
+--padding-factor 1.5 1.5 1.5
+--family C
+--timestepper IMEXRK222
+--save-mesh quadrature
+The 64-rank candidate reserves 128 SLURM tasks. The refined time step remains subject to
+the t = 1 acceptance pilot. The selected spin-up end and retained sampling window are fixed
+at t = 120 and 120 ≤ t ≤ 300; the scripts reject checkpoints or segment endpoints outside that
+schedule.
+
+11
+
+Acceptance record
+
+The final handoff will include the code revision, resolved initialization, integer padded sizes,
+server environment, MPI benchmark, selected ∆t, measured CFL, time-averaged wall stresses
+and actual Reτ , accepted spin-up checkpoint, sampling-window convergence, reference-profile and
+spectral comparisons, half-box correlations, constraint ranks and residuals, file sizes/checksums,
+the exact dense temporal cadence and estimator settings, the state-reconstruction version and
+round-trip report, and a list of deliberately omitted large products. It will explicitly record that
+lag_0 and lag_1 were not generated.
+
+12
+
+Conclusion
+
+The reference paper’s odd count is a Lobatto-grid convention, but the current optimized Shenfun
+MKM biharmonic solver requires an even wall-normal size. The selected Nwall = 192 preserves
+the reference center resolution closely and is vastly finer than the old 64-point mesh, while
+Shenfun continues to impose the walls through its Galerkin bases. The decisive remaining
+prerequisites are an Reτ = 395-aware initialization and flux target, explicit upward rounding of
+the de-aliasing sizes, measured wall-stress diagnostics, the refined full-shape time-step pilot, and
+a storage-aware postprocessing policy. Long production should begin only after the refined-step
+and physical-acceptance gates have passed.
+
+9
+
+

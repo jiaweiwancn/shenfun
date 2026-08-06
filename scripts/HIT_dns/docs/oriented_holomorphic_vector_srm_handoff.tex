@@ -1,0 +1,1586 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\PassOptionsToPackage{dvipsnames,svgnames,x11names}{xcolor}
+%
+\documentclass[
+  11pt,
+  a4paper,
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{enumitem}
+\usepackage[margin=25mm]{geometry}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{2}
+\ifLuaTeX
+\usepackage[bidi=basic]{babel}
+\else
+\usepackage[bidi=default]{babel}
+\fi
+\babelprovide[main,import]{english}
+% get rid of language-specific shorthands (see #6817):
+\let\LanguageShortHands\languageshorthands
+\def\languageshorthands#1{}
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Oriented Holomorphic Pure-Plus-Interaction Vector SRM},
+  pdflang={en},
+  colorlinks=true,
+  linkcolor={MidnightBlue},
+  filecolor={Maroon},
+  citecolor={Blue},
+  urlcolor={MidnightBlue},
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Oriented Holomorphic Pure-Plus-Interaction Vector SRM}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Standalone Technical Handoff}
+\author{}
+\date{}
+
+\setlist[itemize]{leftmargin=*,itemsep=2pt,topsep=4pt}
+\setlist[enumerate]{leftmargin=*,itemsep=2pt,topsep=4pt}
+\titleformat{\section}{\Large\bfseries}{\thesection}{0.75em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.75em}{}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{Oriented Holomorphic Vector SRM}
+\fancyhead[R]{Technical Handoff}
+\fancyfoot[C]{\thepage}
+\setlength{\headheight}{14pt}
+\setlength{\abovedisplayskip}{8pt plus 2pt minus 2pt}
+\setlength{\belowdisplayskip}{8pt plus 2pt minus 2pt}
+\begin{document}
+\maketitle
+\thispagestyle{empty}
+\clearpage
+
+{
+\hypersetup{linkcolor=black}
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\section{Objective}\label{objective}
+
+Construct reduced complex Fourier coefficients
+
+\[
+\boldsymbol a(\boldsymbol k)\in\mathbb C^2
+\]
+
+for the two solenoidal polarization coordinates of every retained
+Fourier mode, such that
+
+\[
+\mathbb E\!\left[
+\boldsymbol a(\boldsymbol k)
+\boldsymbol a(\boldsymbol p)^\dagger
+\right]
+=
+\boldsymbol\Sigma(\boldsymbol k)\,
+\delta_{\boldsymbol k\boldsymbol p},
+\]
+
+and, for every retained triad
+
+\[
+\boldsymbol q=\boldsymbol k+\boldsymbol p,
+\]
+
+\[
+\mathbb E\!\left[
+a_a(\boldsymbol k)
+a_b(\boldsymbol p)
+a_c(\boldsymbol q)^*
+\right]
+=
+\mathcal B_{abc}(\boldsymbol k,\boldsymbol p).
+\]
+
+The generator must preserve the prescribed second-order covariance while
+introducing exactly the required third-order phase coupling. It must
+also remain valid when many triads share modes or feed the same output
+mode.
+
+The construction must reduce to an ordinary second-order solenoidal
+spectral generator when
+
+\[
+\mathcal B=\boldsymbol0.
+\]
+
+
+\subsection{Fourier-space kinematics and reduced
+coordinates}\label{fourier-space-kinematics-and-reduced-coordinates}
+
+Let
+
+\[
+\widehat{\boldsymbol u}(\boldsymbol k)\in\mathbb C^3
+\]
+
+denote the Cartesian Fourier coefficient of the velocity field
+\(\boldsymbol u\) at mode \(\boldsymbol k\). Let
+
+\[
+\boldsymbol d(\boldsymbol k)\in\mathbb C^3
+\]
+
+be the Fourier symbol of the selected discrete divergence operator,
+defined so that
+
+\begin{equation}
+\widehat{(\nabla\cdot\boldsymbol u)}(\boldsymbol k)
+=
+\boldsymbol d(\boldsymbol k)^\dagger
+\widehat{\boldsymbol u}(\boldsymbol k).
+\label{eq:discrete-divergence-symbol}
+\end{equation}
+
+Accordingly, discrete solenoidality at mode \(\boldsymbol k\) is
+
+\[
+\boldsymbol d(\boldsymbol k)^\dagger
+\widehat{\boldsymbol u}(\boldsymbol k)
+=
+0.
+\]
+
+Let
+
+\[
+\boldsymbol Q(\boldsymbol k)\in\mathbb C^{3\times2}
+\]
+
+have orthonormal columns spanning the transverse subspace
+
+\[
+\operatorname{range}\boldsymbol Q(\boldsymbol k)
+=
+\ker\!\left(\boldsymbol d(\boldsymbol k)^\dagger\right).
+\]
+
+Thus,
+
+\[
+\boldsymbol Q(\boldsymbol k)^\dagger\boldsymbol Q(\boldsymbol k)
+=
+\boldsymbol I_2,
+\qquad
+\boldsymbol d(\boldsymbol k)^\dagger\boldsymbol Q(\boldsymbol k)
+=
+\boldsymbol0.
+\]
+
+The reduced polarization coefficient \(\boldsymbol a(\boldsymbol k)\) and
+the Cartesian Fourier coefficient are related by
+
+\[
+\widehat{\boldsymbol u}(\boldsymbol k)
+=
+\boldsymbol Q(\boldsymbol k)\boldsymbol a(\boldsymbol k).
+\]
+
+\section{Main difficulty}\label{main-difficulty}
+
+A quadratic interaction consumes covariance power and may generate
+unintended contractions.
+
+For a generic split
+
+\[
+\boldsymbol a(\boldsymbol q)
+=
+\boldsymbol a^{(p)}(\boldsymbol q)
++
+\boldsymbol a^{(I)}(\boldsymbol q),
+\]
+
+the complete covariance is
+
+\[
+\boldsymbol\Sigma
+=
+\boldsymbol\Sigma^{(p)}
++
+\boldsymbol\Sigma^{(I)}
++
+\boldsymbol\Sigma^{(pI)}
++
+\boldsymbol\Sigma^{(Ip)},
+\]
+
+and the complete third moment contains eight combinations of pure and
+interaction terms.
+
+A valid architecture must therefore ensure that:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  the intended pure--pure--interaction term produces the target
+  bispectrum;
+\item
+  the pure--interaction covariance terms vanish;
+\item
+  interaction covariance includes all parent-pair cross contractions;
+\item
+  unintended third-order terms vanish, including
+  interaction--interaction--interaction terms;
+\item
+  the residual pure covariance remains positive semidefinite;
+\item
+  overlapping triads do not create uncontrolled moment contributions.
+\end{enumerate}
+
+\section{Independent half-spectrum and triad
+orientation}\label{independent-half-spectrum-and-triad-orientation}
+
+Let \(\mathcal H\) contain one representative from each
+non-self-conjugate Fourier pair
+
+\[
+\{\boldsymbol k,-\boldsymbol k\}.
+\]
+
+Choose a positive half-spectrum and a strict order \(\prec\) such that,
+for every retained non-aliased relation
+
+\[
+\boldsymbol q=\boldsymbol k+\boldsymbol p\in\mathcal H,
+\]
+
+one has
+
+\[
+\boldsymbol k\prec\boldsymbol q,
+\qquad
+\boldsymbol p\prec\boldsymbol q.
+\]
+
+For each output mode \(\boldsymbol q\), define the set of canonical
+parent pairs
+
+\[
+\mathcal P_{\boldsymbol q}
+=
+\left\{
+(\boldsymbol k,\boldsymbol p):
+\boldsymbol k+\boldsymbol p=\boldsymbol q,\;
+\boldsymbol k,\boldsymbol p\in\mathcal H,\;
+\boldsymbol k\preceq\boldsymbol p
+\right\}.
+\]
+
+Only one oriented output leg is assigned to each canonical triad: the
+interaction generated by \((\boldsymbol k,\boldsymbol p)\) is inserted
+into the child mode \(\boldsymbol q=\boldsymbol k+\boldsymbol p\).
+
+This orientation makes the construction triangular in Fourier order and
+allows all interaction terms to be holomorphic functions of the
+independent complex Gaussian variables.
+
+\section{Gaussian carrier variables}\label{gaussian-carrier-variables}
+
+For each \(\boldsymbol k\in\mathcal H\), introduce an independent proper
+complex Gaussian vector
+
+\[
+\boldsymbol z(\boldsymbol k)\sim
+\mathcal{CN}(\boldsymbol0,\boldsymbol I_2).
+\]
+
+The carrier variables satisfy
+
+\[
+\mathbb E[\boldsymbol z(\boldsymbol k)]
+=
+\boldsymbol0,
+\]
+
+\[
+\mathbb E\!\left[
+\boldsymbol z(\boldsymbol k)
+\boldsymbol z(\boldsymbol p)^\dagger
+\right]
+=
+\delta_{\boldsymbol k\boldsymbol p}\boldsymbol I_2,
+\]
+
+and
+
+\[
+\mathbb E\!\left[
+\boldsymbol z(\boldsymbol k)
+\boldsymbol z(\boldsymbol p)^T
+\right]
+=
+\boldsymbol0.
+\]
+
+Variables associated with different half-spectrum modes are independent.
+
+The same carrier family must drive both the pure and interaction terms.
+This shared-carrier structure is necessary for a nonzero
+pure--pure--interaction third moment.
+
+\section{Pure term}\label{pure-term}
+
+For every mode,
+
+\[
+\boldsymbol a^{(p)}(\boldsymbol k)
+=
+\boldsymbol L(\boldsymbol k)
+\boldsymbol z(\boldsymbol k),
+\]
+
+where
+
+\[
+\boldsymbol L(\boldsymbol k)
+\boldsymbol L(\boldsymbol k)^\dagger
+=
+\boldsymbol\Sigma^{(p)}(\boldsymbol k).
+\]
+
+The pure covariance \(\boldsymbol\Sigma^{(p)}\) is not prescribed
+independently. It is the residual covariance remaining after the
+interaction covariance has been deducted from the target covariance.
+
+\section{Quadratic interaction term}\label{quadratic-interaction-term}
+
+\subsection{1 Distinct parent modes}\label{distinct-parent-modes}
+
+For a canonical pair \(\boldsymbol k\ne\boldsymbol p\), define the
+quadratic feature
+
+\[
+\boldsymbol\phi_{\boldsymbol k\boldsymbol p}
+=
+\boldsymbol z(\boldsymbol k)
+\otimes
+\boldsymbol z(\boldsymbol p)
+\in\mathbb C^4.
+\]
+
+The interaction contribution to output mode \(\boldsymbol q\) is
+
+\[
+\boldsymbol a^{(I)}(\boldsymbol q)
+=
+\sum_{(\boldsymbol k,\boldsymbol p)\in\mathcal P_{\boldsymbol q}}
+\boldsymbol A(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+\boldsymbol\phi_{\boldsymbol k\boldsymbol p},
+\]
+
+where
+
+\[
+\boldsymbol A(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+\in\mathbb C^{2\times4}.
+\]
+
+Equivalently,
+
+\[
+a_c^{(I)}(\boldsymbol q)
+=
+\sum_{(\boldsymbol k,\boldsymbol p)\in\mathcal P_{\boldsymbol q}}
+\sum_{i,j=1}^{2}
+A_{cij}(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+z_i(\boldsymbol k)z_j(\boldsymbol p).
+\]
+
+Because the carriers are centered proper complex Gaussians,
+
+\[
+\mathbb E[
+z_i(\boldsymbol k)z_j(\boldsymbol p)
+]
+=
+0.
+\]
+
+Therefore every interaction term is centered.
+
+\subsection{2 Repeated parent mode}\label{repeated-parent-mode}
+
+For a repeated-parent triad
+
+\[
+\boldsymbol q=2\boldsymbol k,
+\]
+
+use the normalized symmetric second-order feature
+
+\[
+\boldsymbol h_2(\boldsymbol z)
+=
+\begin{bmatrix}
+z_1^2/\sqrt2\\
+z_1z_2\\
+z_2^2/\sqrt2
+\end{bmatrix}.
+\]
+
+It satisfies
+
+\[
+\mathbb E[
+\boldsymbol h_2(\boldsymbol z)
+\boldsymbol h_2(\boldsymbol z)^\dagger
+]
+=
+\boldsymbol I_3.
+\]
+
+The coefficient matrix for a repeated-parent interaction therefore
+belongs to
+
+\[
+\mathbb C^{2\times3}.
+\]
+
+The target bispectrum must satisfy the parent-exchange symmetry
+
+\[
+\mathcal B_{abc}(\boldsymbol k,\boldsymbol k)
+=
+\mathcal B_{bac}(\boldsymbol k,\boldsymbol k).
+\]
+
+\section{Complete second-order
+moment}\label{complete-second-order-moment}
+
+For any output mode,
+
+\[
+\boldsymbol a(\boldsymbol q)
+=
+\boldsymbol a^{(p)}(\boldsymbol q)
++
+\boldsymbol a^{(I)}(\boldsymbol q).
+\]
+
+Hence
+
+\[
+\begin{aligned}
+\mathbb E[
+\boldsymbol a(\boldsymbol q)
+\boldsymbol a(\boldsymbol q)^\dagger
+]
+={}&
+\boldsymbol\Sigma^{(p)}(\boldsymbol q)
++
+\boldsymbol\Sigma^{(I)}(\boldsymbol q)
+\\
+&+
+\boldsymbol\Sigma^{(pI)}(\boldsymbol q)
++
+\boldsymbol\Sigma^{(Ip)}(\boldsymbol q).
+\end{aligned}
+\]
+
+\subsection{1 Vanishing pure--interaction
+covariance}\label{vanishing-pureinteraction-covariance}
+
+The cross term contains a third-order moment of a centered proper
+complex Gaussian family:
+
+\[
+\mathbb E\!\left[
+\boldsymbol z(\boldsymbol q)
+\boldsymbol\phi_{\boldsymbol k\boldsymbol p}^\dagger
+\right]
+=
+\boldsymbol0.
+\]
+
+Therefore,
+
+\[
+\boldsymbol\Sigma^{(pI)}(\boldsymbol q)
+=
+\boldsymbol0,
+\qquad
+\boldsymbol\Sigma^{(Ip)}(\boldsymbol q)
+=
+\boldsymbol0.
+\]
+
+Thus
+
+\[
+\boldsymbol\Sigma(\boldsymbol q)
+=
+\boldsymbol\Sigma^{(p)}(\boldsymbol q)
++
+\boldsymbol\Sigma^{(I)}(\boldsymbol q).
+\]
+
+\subsection{2 General interaction
+covariance}\label{general-interaction-covariance}
+
+For ordered distinct parent pairs,
+
+\[
+\begin{aligned}
+&
+\mathbb E\!\left[
+z_i(\boldsymbol k)z_j(\boldsymbol p)
+z_m(\boldsymbol r)^*z_n(\boldsymbol s)^*
+\right]
+\\
+&\quad=
+\delta_{\boldsymbol k\boldsymbol r}
+\delta_{\boldsymbol p\boldsymbol s}
+\delta_{im}\delta_{jn}
++
+\delta_{\boldsymbol k\boldsymbol s}
+\delta_{\boldsymbol p\boldsymbol r}
+\delta_{in}\delta_{jm}.
+\end{aligned}
+\]
+
+Let \(\alpha,\beta\in\mathcal P_{\boldsymbol q}\) denote canonical
+parent pairs and define
+
+\[
+\boldsymbol\Gamma_{\alpha\beta}
+=
+\mathbb E[
+\boldsymbol\phi_\alpha
+\boldsymbol\phi_\beta^\dagger
+].
+\]
+
+Then the complete interaction covariance is
+
+\[
+\boldsymbol\Sigma^{(I)}(\boldsymbol q)
+=
+\sum_{\alpha,\beta\in\mathcal P_{\boldsymbol q}}
+\boldsymbol A_{\boldsymbol q,\alpha}
+\boldsymbol\Gamma_{\alpha\beta}
+\boldsymbol A_{\boldsymbol q,\beta}^\dagger.
+\]
+
+This expression includes every cross contraction between parent pairs
+feeding the same output mode.
+
+After canonicalizing unordered pairs and using normalized
+repeated-parent features,
+
+\[
+\boldsymbol\Gamma_{\alpha\beta}
+=
+\delta_{\alpha\beta}\boldsymbol I.
+\]
+
+Therefore,
+
+\[
+\boxed{
+\boldsymbol\Sigma^{(I)}(\boldsymbol q)
+=
+\sum_{\alpha\in\mathcal P_{\boldsymbol q}}
+\boldsymbol A_{\boldsymbol q,\alpha}
+\boldsymbol A_{\boldsymbol q,\alpha}^\dagger
+}.
+\]
+
+Different parent pairs may share one Fourier mode, but their quadratic
+features remain orthogonal unless their complete parent multisets
+coincide.
+
+\subsection{3 Residual covariance
+condition}\label{residual-covariance-condition}
+
+The pure covariance is
+
+\[
+\boxed{
+\boldsymbol\Sigma^{(p)}(\boldsymbol q)
+=
+\boldsymbol\Sigma(\boldsymbol q)
+-
+\boldsymbol\Sigma^{(I)}(\boldsymbol q)
+}.
+\]
+
+The construction is admissible only if
+
+\[
+\boxed{
+\boldsymbol\Sigma^{(p)}(\boldsymbol q)
+\succeq\boldsymbol0
+}
+\]
+
+for every retained output mode.
+
+The interaction therefore consumes covariance power, and the prescribed
+covariance and bispectrum cannot be chosen independently.
+
+\section{Complete third-order moment}\label{complete-third-order-moment}
+
+For a retained triad
+
+\[
+\boldsymbol q=\boldsymbol k+\boldsymbol p,
+\]
+
+expand
+
+\[
+\mathbb E\!\left[
+(a_a^{(p)}+a_a^{(I)})_{\boldsymbol k}
+(a_b^{(p)}+a_b^{(I)})_{\boldsymbol p}
+(a_c^{(p)}+a_c^{(I)})_{\boldsymbol q}^*
+\right].
+\]
+
+There are eight contributions:
+
+\[
+PPP^*,\;
+PPI^*,\;
+PIP^*,\;
+IPP^*,\;
+PII^*,\;
+IPI^*,\;
+IIP^*,\;
+III^*.
+\]
+
+Under the global phase transformation
+
+\[
+\boldsymbol z(\boldsymbol r)
+\longmapsto
+e^{\mathrm i\theta}
+\boldsymbol z(\boldsymbol r)
+\]
+
+for every half-spectrum mode \(\boldsymbol r\), the joint carrier
+distribution is unchanged.
+
+The pure and interaction terms transform as
+
+\[
+\boldsymbol a^{(p)}
+\longmapsto
+e^{\mathrm i\theta}\boldsymbol a^{(p)},
+\]
+
+\[
+\boldsymbol a^{(I)}
+\longmapsto
+e^{2\mathrm i\theta}\boldsymbol a^{(I)}.
+\]
+
+The phase exponents of the eight third-moment terms are:
+
+\begin{longtable}[]{@{}lr@{}}
+\toprule\noalign{}
+Term & Phase exponent \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\(PPP^*\) & \(1\) \\
+\(PPI^*\) & \(0\) \\
+\(PIP^*\) & \(2\) \\
+\(IPP^*\) & \(2\) \\
+\(PII^*\) & \(1\) \\
+\(IPI^*\) & \(1\) \\
+\(IIP^*\) & \(3\) \\
+\(III^*\) & \(2\) \\
+\end{longtable}
+
+Only \(PPI^*\) is invariant for every \(\theta\). Therefore,
+
+\[
+\boxed{
+\mathbb E[
+a_a(\boldsymbol k)
+a_b(\boldsymbol p)
+a_c(\boldsymbol q)^*
+]
+=
+\mathbb E[
+a_a^{(p)}(\boldsymbol k)
+a_b^{(p)}(\boldsymbol p)
+a_c^{(I)}(\boldsymbol q)^*
+]
+}.
+\]
+
+All unintended third-order contributions vanish identically, including
+
+\[
+\mathbb E[
+a_a^{(I)}(\boldsymbol k)
+a_b^{(I)}(\boldsymbol p)
+a_c^{(I)}(\boldsymbol q)^*
+]
+=
+0.
+\]
+
+This remains true even when many triads overlap, because the argument
+depends on holomorphic degree rather than pairwise triad independence.
+
+\section{Relation between the interaction tensor and the target
+bispectrum}\label{relation-between-the-interaction-tensor-and-the-target-bispectrum}
+
+For a distinct parent pair, define the output-component matrix
+
+\[
+\boldsymbol A_c(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+=
+\left[
+A_{cij}(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+\right]_{i,j=1}^{2}
+\in\mathbb C^{2\times2}.
+\]
+
+Define the corresponding target bispectrum slice
+
+\[
+\boldsymbol B_c(\boldsymbol k,\boldsymbol p)
+=
+\left[
+\mathcal B_{abc}(\boldsymbol k,\boldsymbol p)
+\right]_{a,b=1}^{2}.
+\]
+
+Wick contraction gives
+
+\[
+\boxed{
+\boldsymbol B_c(\boldsymbol k,\boldsymbol p)
+=
+\boldsymbol L(\boldsymbol k)\,
+\overline{
+\boldsymbol A_c(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+}
+\,\boldsymbol L(\boldsymbol p)^T
+}.
+\]
+
+If the pure covariance factors are nonsingular,
+
+\[
+\boxed{
+\boldsymbol A_c(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+=
+\overline{
+\boldsymbol L(\boldsymbol k)^{-1}
+\boldsymbol B_c(\boldsymbol k,\boldsymbol p)
+\boldsymbol L(\boldsymbol p)^{-T}
+}
+}.
+\]
+
+For rank-deficient pure covariances, use Moore--Penrose inverses:
+
+\[
+\boxed{
+\boldsymbol A_c
+=
+\overline{
+\boldsymbol L(\boldsymbol k)^+
+\boldsymbol B_c
+\boldsymbol L(\boldsymbol p)^{+T}
+}
+}.
+\]
+
+The target slice must lie in the supported parent subspaces:
+
+\[
+\boxed{
+\boldsymbol B_c
+=
+\boldsymbol P_{\boldsymbol k}
+\boldsymbol B_c
+\boldsymbol P_{\boldsymbol p}^T
+},
+\]
+
+where
+
+\[
+\boldsymbol P_{\boldsymbol k}
+=
+\boldsymbol L(\boldsymbol k)
+\boldsymbol L(\boldsymbol k)^+.
+\]
+
+Any interaction component lying in a null direction of the moment map
+should be set to zero because it consumes covariance without changing
+the prescribed bispectrum.
+
+\section{Covariance cost of a target bispectrum
+slice}\label{covariance-cost-of-a-target-bispectrum-slice}
+
+For a distinct parent pair, let
+
+\[
+\boldsymbol G_{\boldsymbol q;\boldsymbol k\boldsymbol p}
+=
+\boldsymbol A_{\boldsymbol q;\boldsymbol k\boldsymbol p}
+\boldsymbol A_{\boldsymbol q;\boldsymbol k\boldsymbol p}^\dagger.
+\]
+
+Its entries can be expressed directly in terms of the target bispectrum
+and the parent pure covariances:
+
+\[
+\boxed{
+\left[
+\boldsymbol G_{\boldsymbol q;\boldsymbol k\boldsymbol p}
+\right]_{cd}
+=
+\operatorname{tr}\!\left[
+\boldsymbol B_c^\dagger
+\boldsymbol\Sigma^{(p)}(\boldsymbol k)^+
+\boldsymbol B_d
+\boldsymbol\Sigma^{(p)}(\boldsymbol p)^{+T}
+\right]
+}.
+\]
+
+Hence
+
+\[
+\boxed{
+\boldsymbol\Sigma^{(p)}(\boldsymbol q)
+=
+\boldsymbol\Sigma(\boldsymbol q)
+-
+\sum_{\boldsymbol k+\boldsymbol p=\boldsymbol q}
+\boldsymbol G_{\boldsymbol q;\boldsymbol k\boldsymbol p}
+}.
+\]
+
+This formula makes the covariance--bispectrum realizability coupling
+explicit.
+
+\section{Direct recursive
+construction}\label{direct-recursive-construction}
+
+The oriented half-spectrum architecture yields a triangular recursion.
+
+Process modes in increasing order under \(\prec\).
+
+For each output mode \(\boldsymbol q\):
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Enumerate all canonical parent pairs
+
+  \[
+  (\boldsymbol k,\boldsymbol p)\in\mathcal P_{\boldsymbol q}.
+  \]
+\item
+  The parent pure factors
+
+  \[
+  \boldsymbol L(\boldsymbol k),
+  \qquad
+  \boldsymbol L(\boldsymbol p)
+  \]
+
+  are already available because
+
+  \[
+  \boldsymbol k,\boldsymbol p\prec\boldsymbol q.
+  \]
+\item
+  Compute every interaction tensor
+
+  \[
+  \boldsymbol A(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+  \]
+
+  from the prescribed target slice \(\boldsymbol B_c\).
+\item
+  Accumulate the interaction covariance:
+
+  \[
+  \boldsymbol\Sigma^{(I)}(\boldsymbol q)
+  =
+  \sum_{(\boldsymbol k,\boldsymbol p)\in\mathcal P_{\boldsymbol q}}
+  \boldsymbol A_{\boldsymbol q;\boldsymbol k\boldsymbol p}
+  \boldsymbol A_{\boldsymbol q;\boldsymbol k\boldsymbol p}^\dagger.
+  \]
+\item
+  Form the residual:
+
+  \[
+  \boldsymbol\Sigma^{(p)}(\boldsymbol q)
+  =
+  \boldsymbol\Sigma(\boldsymbol q)
+  -
+  \boldsymbol\Sigma^{(I)}(\boldsymbol q).
+  \]
+\item
+  Check the realizability condition:
+
+  \[
+  \lambda_{\min}
+  \bigl(
+  \boldsymbol\Sigma^{(p)}(\boldsymbol q)
+  \bigr)
+  \ge
+  -\varepsilon_{\mathrm{PSD}}.
+  \]
+\item
+  Reject the target if the negative eigenvalue is materially larger than
+  numerical tolerance.
+\item
+  Clip only roundoff-scale negative eigenvalues.
+\item
+  Compute a square root:
+
+  \[
+  \boldsymbol\Sigma^{(p)}(\boldsymbol q)
+  =
+  \boldsymbol L(\boldsymbol q)
+  \boldsymbol L(\boldsymbol q)^\dagger.
+  \]
+\end{enumerate}
+
+No global nonlinear iteration is required for the non-aliased oriented
+architecture.
+
+A coupled solve becomes necessary only when introducing modular
+aliasing, symmetric interaction allocation over multiple legs,
+nonholomorphic interactions, or exceptional self-conjugate modes.
+
+\section{Sample generator}\label{sample-generator}
+
+After the offline recursive construction has determined all
+\(\boldsymbol L\) and \(\boldsymbol A\):
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  Draw independent carriers
+
+  \[
+  \boldsymbol z(\boldsymbol k)
+  \sim\mathcal{CN}(\boldsymbol0,\boldsymbol I_2),
+  \qquad
+  \boldsymbol k\in\mathcal H.
+  \]
+\item
+  Compute the pure terms
+
+  \[
+  \boldsymbol a^{(p)}(\boldsymbol k)
+  =
+  \boldsymbol L(\boldsymbol k)\boldsymbol z(\boldsymbol k).
+  \]
+\item
+  Process modes in increasing order and compute
+
+  \[
+  \boldsymbol a^{(I)}(\boldsymbol q)
+  =
+  \sum_{(\boldsymbol k,\boldsymbol p)\in\mathcal P_{\boldsymbol q}}
+  \boldsymbol A(\boldsymbol q;\boldsymbol k,\boldsymbol p)
+  \boldsymbol\phi_{\boldsymbol k\boldsymbol p}.
+  \]
+\item
+  Set
+
+  \[
+  \boldsymbol a(\boldsymbol q)
+  =
+  \boldsymbol a^{(p)}(\boldsymbol q)
+  +
+  \boldsymbol a^{(I)}(\boldsymbol q).
+  \]
+\item
+  Reconstruct the negative half-spectrum through Fourier reality.
+\end{enumerate}
+
+The interaction values do not need to be used recursively as carriers.
+Every interaction term is evaluated directly from the underlying
+Gaussian variables \(\boldsymbol z\).
+
+\section{Fourier reality and Cartesian
+reconstruction}\label{fourier-reality-and-cartesian-reconstruction}
+
+Using the Fourier-space notation introduced in
+Section~\ref{fourier-space-kinematics-and-reduced-coordinates}, reconstruct
+the Cartesian Fourier coefficient by
+
+\[
+\widehat{\boldsymbol u}(\boldsymbol k)
+=
+\boldsymbol Q(\boldsymbol k)
+\boldsymbol a(\boldsymbol k),
+\]
+
+where the columns of \(\boldsymbol Q(\boldsymbol k)\) form an orthonormal
+basis of
+
+\[
+\ker\!\left(\boldsymbol d(\boldsymbol k)^\dagger\right).
+\]
+
+If the basis gauge is chosen so that
+
+\[
+\boldsymbol Q(-\boldsymbol k)
+=
+\overline{\boldsymbol Q(\boldsymbol k)},
+\]
+
+impose
+
+\[
+\boldsymbol a(-\boldsymbol k)
+=
+\overline{\boldsymbol a(\boldsymbol k)}.
+\]
+
+Then
+
+\[
+\widehat{\boldsymbol u}(-\boldsymbol k)
+=
+\overline{\widehat{\boldsymbol u}(\boldsymbol k)}.
+\]
+
+For a general transverse-basis gauge, define
+
+\[
+\boldsymbol J(\boldsymbol k)
+=
+\boldsymbol Q(-\boldsymbol k)^\dagger
+\overline{\boldsymbol Q(\boldsymbol k)}
+\]
+
+and impose
+
+\[
+\boldsymbol a(-\boldsymbol k)
+=
+\boldsymbol J(\boldsymbol k)
+\overline{\boldsymbol a(\boldsymbol k)}.
+\]
+
+The Cartesian covariance is
+
+\[
+\boldsymbol\Phi(\boldsymbol k)
+=
+\boldsymbol Q(\boldsymbol k)
+\boldsymbol\Sigma(\boldsymbol k)
+\boldsymbol Q(\boldsymbol k)^\dagger.
+\]
+
+The Cartesian bispectrum is
+
+\[
+\mathbb E[
+\widehat u_i(\boldsymbol k)
+\widehat u_j(\boldsymbol p)
+\widehat u_\ell(\boldsymbol q)^*
+]
+=
+\sum_{a,b,c=1}^{2}
+Q_{ia}(\boldsymbol k)
+Q_{jb}(\boldsymbol p)
+Q_{\ell c}(\boldsymbol q)^*
+\mathcal B_{abc}(\boldsymbol k,\boldsymbol p).
+\]
+
+Solenoidality follows directly from the transverse basis.
+
+\section{Exceptional cases}\label{exceptional-cases}
+
+\subsection{1 Zero mode}\label{zero-mode}
+
+The zero mode should normally represent the deterministic mean and be
+excluded from the fluctuating generator:
+
+\[
+\boldsymbol a(\boldsymbol0)
+=
+\boldsymbol0.
+\]
+
+Triads containing the zero mode should not be included in the core
+interaction set.
+
+\subsection{2 Self-conjugate and Nyquist
+modes}\label{self-conjugate-and-nyquist-modes}
+
+On an even discrete grid, some modes satisfy
+
+\[
+-\boldsymbol k\equiv\boldsymbol k.
+\]
+
+Their Fourier coefficients are real rather than proper complex Gaussian.
+The global complex-phase selection rule does not apply to them.
+
+The preferred baseline is to use an odd or suitably dealiased grid that
+excludes such modes from the interacting set.
+
+A conservative alternative is to generate self-conjugate modes linearly
+and prescribe zero bispectrum for triads containing them.
+
+If such triads must be retained, use centered real Hermite features and
+explicitly retain all Wick contractions in the governing equations.
+
+\subsection{3 Repeated parent modes}\label{repeated-parent-modes}
+
+For
+
+\[
+\boldsymbol q=2\boldsymbol k,
+\]
+
+use the normalized symmetric quadratic feature described above. Solve
+the moment equation on the symmetric tensor-product subspace.
+
+\subsection{4 Aliasing}\label{aliasing}
+
+The triangular recursion assumes ordinary wavevector addition:
+
+\[
+\boldsymbol q=\boldsymbol k+\boldsymbol p.
+\]
+
+It does not apply directly to modular alias relations.
+
+Aliased interactions should either be removed by dealiasing or handled
+by a global coupled system.
+
+\subsection{5 Rank-deficient parent
+covariance}\label{rank-deficient-parent-covariance}
+
+When
+
+\[
+\operatorname{rank}
+\boldsymbol\Sigma^{(p)}(\boldsymbol k)<2,
+\]
+
+the target bispectrum must lie in the supported parent subspace. Use
+pseudoinverses and explicitly test the support projector condition.
+
+\section{Architecture rationale}\label{architecture-rationale}
+
+The selected architecture has four central advantages.
+
+\subsection{Exact third-moment
+selection}\label{exact-third-moment-selection}
+
+The global phase-degree argument eliminates all unwanted third-order
+contributions exactly.
+
+\subsection{Controlled overlap}\label{controlled-overlap}
+
+Overlapping triads do not produce unintended third moments, and
+canonical quadratic features diagonalize the interaction covariance
+across distinct parent pairs.
+
+\subsection{Low latent dimension}\label{low-latent-dimension}
+
+Only two proper complex Gaussian carrier variables are needed per
+independent Fourier mode.
+
+\subsection{Direct solution}\label{direct-solution}
+
+The half-spectrum ordering turns the covariance--bispectrum coupling
+into a recursive construction instead of a global nonlinear moment
+problem.
+
+The main limitation is that the stochastic generator is explicitly
+oriented: the interaction is assigned to one output leg of each
+canonical triad. The resulting covariance and bispectrum can still
+satisfy the required physical permutation and Fourier-reality
+symmetries, but those symmetries must be imposed on the target data and
+on the canonical triad bookkeeping.
+
+\section{Implementation structure}\label{implementation-structure}
+
+A practical implementation should separate the following components.
+
+\subsection{1 Spectral geometry}\label{spectral-geometry}
+
+\begin{itemize}
+\tightlist
+\item
+  construct the independent half-spectrum;
+\item
+  identify zero, Nyquist, and self-conjugate modes;
+\item
+  impose a strict parent-before-child ordering;
+\item
+  enumerate canonical parent pairs;
+\item
+  reject or flag aliased triads.
+\end{itemize}
+
+\subsection{2 Target validation}\label{target-validation}
+
+\begin{itemize}
+\tightlist
+\item
+  check Hermitian positive semidefiniteness of every
+  \(\boldsymbol\Sigma(\boldsymbol k)\);
+\item
+  check bispectrum parent-exchange symmetry;
+\item
+  check Fourier-reality relations;
+\item
+  check support consistency for rank-deficient parent covariances;
+\item
+  check repeated-parent symmetry.
+\end{itemize}
+
+\subsection{3 Offline coefficient
+construction}\label{offline-coefficient-construction}
+
+\begin{itemize}
+\tightlist
+\item
+  recursively compute \(\boldsymbol A\);
+\item
+  accumulate \(\boldsymbol\Sigma^{(I)}\);
+\item
+  compute and factor \(\boldsymbol\Sigma^{(p)}\);
+\item
+  record PSD margins and condition numbers.
+\end{itemize}
+
+\subsection{4 Sampling}\label{sampling}
+
+\begin{itemize}
+\tightlist
+\item
+  draw independent proper complex Gaussian carriers;
+\item
+  evaluate pure coefficients;
+\item
+  evaluate quadratic interactions;
+\item
+  reconstruct the full Fourier spectrum;
+\item
+  transform to Cartesian coefficients or physical space.
+\end{itemize}
+
+\subsection{5 Analytical diagnostics}\label{analytical-diagnostics}
+
+\begin{itemize}
+\tightlist
+\item
+  compute generated covariance directly from \(\boldsymbol L\) and
+  \(\boldsymbol A\);
+\item
+  compute generated bispectrum directly from the Wick-contraction
+  formulas;
+\item
+  compare analytical moments against prescribed targets before Monte
+  Carlo sampling.
+\end{itemize}
+
+\section{Required unit tests}\label{required-unit-tests}
+
+The implementation should include at least the following tests.
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Carrier statistics}
+
+  Verify
+
+  \[
+  \mathbb E[
+  \boldsymbol z(\boldsymbol k)
+  \boldsymbol z(\boldsymbol p)^\dagger
+  ]
+  =
+  \delta_{\boldsymbol k\boldsymbol p}\boldsymbol I_2
+  \]
+
+  and
+
+  \[
+  \mathbb E[
+  \boldsymbol z(\boldsymbol k)
+  \boldsymbol z(\boldsymbol p)^T
+  ]
+  =
+  \boldsymbol0.
+  \]
+\item
+  \textbf{Fourier reality}
+
+  Verify reconstructed negative modes satisfy the required conjugacy
+  relation.
+\item
+  \textbf{Pure--interaction covariance}
+
+  Verify analytically and numerically that
+
+  \[
+  \boldsymbol\Sigma^{(pI)}
+  =
+  \boldsymbol\Sigma^{(Ip)}
+  =
+  \boldsymbol0.
+  \]
+\item
+  \textbf{Quadratic-feature Gram matrix}
+
+  Verify orthonormality for distinct canonical pairs and repeated-parent
+  features.
+\item
+  \textbf{Multiple parent pairs for one output}
+
+  Use a manufactured mode \(\boldsymbol q\) with several parent
+  decompositions and verify additive interaction covariance.
+\item
+  \textbf{Overlapping triads}
+
+  Use several triads sharing one or more modes and verify that no
+  unintended third-order terms appear.
+\item
+  \textbf{Repeated-parent triad}
+
+  Test \(\boldsymbol q=2\boldsymbol k\) using the symmetric quadratic
+  basis.
+\item
+  \textbf{Rank-deficient covariance}
+
+  Verify support projection, pseudoinverse handling, and rejection of
+  unsupported bispectrum components.
+\item
+  \textbf{Residual PSD failure}
+
+  Verify that materially indefinite residual covariance is detected and
+  rejected.
+\item
+  \textbf{Roundoff-scale eigenvalues}
+
+  Verify that only numerical-scale negative eigenvalues are clipped.
+\item
+  \textbf{Cartesian solenoidality}
+
+  Verify
+
+  \[
+  \boldsymbol d(\boldsymbol k)^\dagger
+  \widehat{\boldsymbol u}(\boldsymbol k)
+  =
+  0.
+  \]
+\item
+  \textbf{Zero-bispectrum limit}
+
+  Verify
+
+  \[
+  \mathcal B=\boldsymbol0
+  \]
+
+  implies
+
+  \[
+  \boldsymbol A=\boldsymbol0,
+  \qquad
+  \boldsymbol\Sigma^{(p)}=\boldsymbol\Sigma,
+  \qquad
+  \boldsymbol a=\boldsymbol L\boldsymbol z.
+  \]
+\end{enumerate}
+
+\section{Monte Carlo validation}\label{monte-carlo-validation}
+
+For manufactured targets known to be realizable by the architecture:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  construct \(\boldsymbol L\) and \(\boldsymbol A\) analytically;
+\item
+  generate a large ensemble of independent samples;
+\item
+  estimate
+
+  \[
+  \widehat{\boldsymbol\Sigma}(\boldsymbol k)
+  =
+  \frac1N
+  \sum_{n=1}^{N}
+  \boldsymbol a^{(n)}(\boldsymbol k)
+  \boldsymbol a^{(n)}(\boldsymbol k)^\dagger;
+  \]
+\item
+  estimate
+
+  \[
+  \widehat{\mathcal B}_{abc}(\boldsymbol k,\boldsymbol p)
+  =
+  \frac1N
+  \sum_{n=1}^{N}
+  a_a^{(n)}(\boldsymbol k)
+  a_b^{(n)}(\boldsymbol p)
+  a_c^{(n)}(\boldsymbol q)^*;
+  \]
+\item
+  compare the empirical moments against both the prescribed targets and
+  the analytical generated moments;
+\item
+  assess errors relative to estimated Monte Carlo standard errors rather
+  than using only fixed absolute tolerances.
+\end{enumerate}
+
+The analytical formulas should match the prescribed moments to numerical
+precision. Monte Carlo estimates should converge within sampling
+tolerances.
+
+\section{Completion criterion}\label{completion-criterion}
+
+The construction is complete when, for every manufactured target known
+to be realizable:
+
+\[
+\boldsymbol\Sigma_{\mathrm{generated}}(\boldsymbol k)
+=
+\boldsymbol\Sigma_{\mathrm{target}}(\boldsymbol k)
+\]
+
+and
+
+\[
+\mathcal B_{\mathrm{generated}}(\boldsymbol k,\boldsymbol p)
+=
+\mathcal B_{\mathrm{target}}(\boldsymbol k,\boldsymbol p)
+\]
+
+hold analytically to numerical precision, while Monte Carlo estimates
+recover both moments within sampling uncertainty.
+
+In the zero-bispectrum limit,
+
+\[
+\mathcal B=\boldsymbol0,
+\]
+
+the construction must reduce exactly to
+
+\[
+\boldsymbol a(\boldsymbol k)
+=
+\boldsymbol L(\boldsymbol k)\boldsymbol z(\boldsymbol k),
+\]
+
+with
+
+\[
+\boldsymbol L(\boldsymbol k)
+\boldsymbol L(\boldsymbol k)^\dagger
+=
+\boldsymbol\Sigma(\boldsymbol k).
+\]
+
+\section{Recommended next implementation
+step}\label{recommended-next-implementation-step}
+
+Implement the non-aliased, non-self-conjugate, distinct-parent case
+first.
+
+The first manufactured validation problem should contain:
+
+\begin{itemize}
+\tightlist
+\item
+  a small ordered half-spectrum;
+\item
+  at least one output mode with multiple parent pairs;
+\item
+  at least two triads sharing a parent mode;
+\item
+  full-rank \(2\times2\) target covariances;
+\item
+  interaction tensors chosen first, followed by analytically generated
+  realizable covariance and bispectrum targets.
+\end{itemize}
+
+After this baseline passes all analytical and Monte Carlo checks, add
+rank-deficient covariances, repeated-parent triads, general
+transverse-basis gauges, and exceptional modes.
+
+\end{document}

@@ -1,0 +1,13 @@
+timestamp_utc=2026-07-27T08:07:38Z
+job_id=not-in-slurm
+node_list=not-in-slurm
+allocated_slurm_tasks=128
+slurm_tasks_per_mpi_rank=2
+mpi_ranks=64
+run_dir=/private/tmp/re395_run
+repo=/private/tmp/non_git_repo
+runner=/share/home/dkyzdsys_wanjiawei/shenfun-master/scripts/mkm_dns_target/run_mkm_dns.py
+spinup_final_time=120
+sampling_window=120,300
+sampling_dt=0.005
+git_provenance=unavailable reason=git_not_found

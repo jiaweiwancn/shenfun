@@ -17,7 +17,11 @@
 
 \newcommand{\ii}{\mathrm{i}}
 \newcommand{\dd}{\mathrm{d}}
+\newcommand{\bfa}{\bm{a}}
+\newcommand{\bfb}{\bm{b}}
+\newcommand{\bff}{\bm{f}}
 \newcommand{\bfu}{\bm{u}}
+\newcommand{\bfv}{\bm{v}}
 \newcommand{\bfq}{\bm{q}}
 \newcommand{\bfzero}{\bm{0}}
 \newcommand{\Graw}{G_{\mathrm{raw}}}
@@ -1796,6 +1800,961 @@ divergence and no-slip constraints to near machine precision.
   level relative to the profile magnitudes.}
   \label{fig:projected_reynolds_errors}
 \end{figure}
+
+\section{Selected-mode channel resolvent analysis}
+\label{sec:channel_resolvent_analysis}
+
+The constraint construction in Section~\ref{sec:constraint} and the modal DNS
+objects in Sections~\ref{sec:sampled_outputs} and
+\ref{sec:projected_covariance} provide the ingredients needed for a
+McKeon-style channel resolvent calculation. This section records the
+implemented proof-of-concept framework. The implementation is selected-mode:
+it computes the resolvent, DNS temporal cross-spectral density (CSD), DNS
+projection fractions, and diagnostic figures for specified horizontal mode
+indices. It is not yet an exhaustive mode sweep and should not be interpreted
+as a high-Reynolds-number or long-box scaling result.
+
+\subsection{Notation for a single horizontal mode}
+
+Fix a horizontal Fourier mode with indices \((p,q)\), streamwise wavenumber
+\(\kappa=\kappa_p\), and spanwise wavenumber \(\lambda=\lambda_q\). For this
+mode the level-major velocity vector is
+\begin{equation}
+  \bfq
+  =
+  \begin{bmatrix}
+    u_x(z_0) & u_y(z_0) & u_z(z_0) &
+    \cdots &
+    u_x(z_{N_z-1}) & u_y(z_{N_z-1}) & u_z(z_{N_z-1})
+  \end{bmatrix}^{T}
+  \in\mathbb{C}^{3N_z}.
+  \label{eq:resolvent_level_major_vector}
+\end{equation}
+The component ordering in Eq.~\eqref{eq:resolvent_level_major_vector} is the
+same ordering used by the target HDF5 file and by the constraint matrices:
+streamwise, spanwise, wall-normal at each Chebyshev-Gauss level.
+
+The turbulent mean profile is the streamwise component of the sampled mean,
+\begin{equation}
+  U_m = U(z_m) =
+  \left(\texttt{mean\_profile}\right)_{m,0},
+  \qquad m=0,\ldots,N_z-1.
+  \label{eq:resolvent_mean_definition}
+\end{equation}
+The derivative matrix \(\Dz\) derived in Section~\ref{sec:constraint} gives
+the discrete wall-normal mean shear
+\begin{equation}
+  U'_m = \left(\Dz U\right)_m.
+  \label{eq:resolvent_mean_shear}
+\end{equation}
+All vectors and matrices below use the Chebyshev-Gauss physical quadrature
+weights, not a uniform-grid approximation. Let \(w_m>0\) denote the Fejer
+first-rule weights on \([-1,1]\), ordered consistently with \(z_m\). They are
+defined by the quadrature rule
+\begin{equation}
+  \int_{-1}^{1} g(z)\,\dd z
+  \approx
+  \sum_{m=0}^{N_z-1} w_m g(z_m),
+  \qquad
+  \sum_{m=0}^{N_z-1} w_m \approx 2.
+  \label{eq:resolvent_quadrature_rule}
+\end{equation}
+The implementation stores no kinetic-energy factor \(1/2\) in the weight. The
+level-major velocity energy matrix is therefore
+\begin{equation}
+  W_q =
+  \mathrm{diag}
+  \left(
+    w_0,w_0,w_0,\ldots,w_{N_z-1},w_{N_z-1},w_{N_z-1}
+  \right).
+  \label{eq:resolvent_wq_definition}
+\end{equation}
+For two modal velocity vectors \(\bfa,\bfb\in\mathbb{C}^{3N_z}\), the
+implemented energy inner product is
+\begin{equation}
+  \langle \bfa,\bfb\rangle_{W_q}
+  =
+  \bfa^* W_q \bfb
+  =
+  \sum_{m=0}^{N_z-1} w_m
+  \left[
+    a_x(z_m)^* b_x(z_m)
+    +a_y(z_m)^* b_y(z_m)
+    +a_z(z_m)^* b_z(z_m)
+  \right].
+  \label{eq:resolvent_energy_inner_product}
+\end{equation}
+
+\subsection{Energy-orthonormal admissible basis}
+
+For the chosen \((\kappa,\lambda)\), the compressed constraint matrix
+\(\Gtilde(\kappa,\lambda)\) was derived in
+Section~\ref{sec:constraint}. The admissible velocity subspace is
+\begin{equation}
+  \mathcal{V}_{\kappa,\lambda}
+  =
+  \left\{
+    \bfq\in\mathbb{C}^{3N_z}:
+    \Gtilde(\kappa,\lambda)\bfq=\bfzero
+  \right\}.
+  \label{eq:resolvent_admissible_subspace}
+\end{equation}
+The same singular-value convention used to construct \(\Gtilde\) also gives a
+Euclidean null-space matrix \(N\), denoted \(\texttt{Nmat}\) in the code, such
+that
+\begin{equation}
+  \Gtilde N = 0.
+  \label{eq:resolvent_nullspace_property}
+\end{equation}
+The columns of \(N\) span the admissible space, but they are orthonormal in
+the Euclidean inner product inherited from the SVD, not in the physical
+quadrature energy inner product. The implemented resolvent instead needs a
+matrix \(Q\) satisfying
+\begin{equation}
+  \Gtilde Q=0,
+  \qquad
+  Q^*W_qQ=I.
+  \label{eq:resolvent_q_requirements}
+\end{equation}
+The construction is as follows. First form the Gram matrix
+\begin{equation}
+  M = N^*W_qN.
+  \label{eq:resolvent_gram_matrix}
+\end{equation}
+Because \(W_q\) is positive diagonal and the columns of \(N\) are linearly
+independent, \(M\) is Hermitian positive definite on the retained null space.
+Let
+\begin{equation}
+  M = V\Lambda V^*
+  \label{eq:resolvent_gram_eigendecomposition}
+\end{equation}
+be its Hermitian eigendecomposition, where
+\(\Lambda=\mathrm{diag}(\mu_1,\ldots,\mu_r)\) with \(\mu_j>0\), and \(r\) is
+the admissible dimension. Define
+\begin{equation}
+  Q = N V \Lambda^{-1/2}.
+  \label{eq:resolvent_q_definition}
+\end{equation}
+Then the constraint property follows immediately from
+Eq.~\eqref{eq:resolvent_nullspace_property}:
+\begin{equation}
+  \Gtilde Q
+  =
+  \Gtilde N V\Lambda^{-1/2}
+  =
+  0.
+  \label{eq:resolvent_q_constraint_proof}
+\end{equation}
+The energy orthonormality follows by substituting
+Eq.~\eqref{eq:resolvent_q_definition} into \(Q^*W_qQ\):
+\begin{align}
+  Q^*W_qQ
+  &=
+  \left(NV\Lambda^{-1/2}\right)^*
+  W_q
+  \left(NV\Lambda^{-1/2}\right) \nonumber\\
+  &=
+  \Lambda^{-1/2}V^*N^*W_qNV\Lambda^{-1/2}
+  \nonumber\\
+  &=
+  \Lambda^{-1/2}V^*MV\Lambda^{-1/2}
+  \nonumber\\
+  &=
+  \Lambda^{-1/2}\Lambda\Lambda^{-1/2}
+  =
+  I.
+  \label{eq:resolvent_q_orthonormality_proof}
+\end{align}
+Consequently every admissible velocity vector represented by the reduced
+coordinate vector \(\bfa\in\mathbb{C}^{r}\) has the form
+\begin{equation}
+  \bfq = Q\bfa,
+  \label{eq:resolvent_q_reduced_coordinates}
+\end{equation}
+and its quadrature energy is
+\begin{equation}
+  \bfq^*W_q\bfq
+  =
+  \bfa^*Q^*W_qQ\bfa
+  =
+  \bfa^*\bfa.
+  \label{eq:resolvent_reduced_energy}
+\end{equation}
+This identity is why the singular vectors of the reduced resolvent can be
+mapped back to physical velocity space without any additional normalization.
+
+\subsection{Pressure-eliminated velocity operator}
+
+The velocity perturbation is written as a single Fourier harmonic,
+\begin{equation}
+  \bfu'(x,y,z,t)
+  =
+  \widehat{\bfu}(z,t)
+  \exp\left[\ii(\kappa x+\lambda y)\right],
+  \label{eq:resolvent_spatial_harmonic}
+\end{equation}
+and the mean velocity is \(U(z)\bm{e}_x\). Linearizing
+Eq.~\eqref{eq:ns_momentum} around this mean gives
+\begin{equation}
+  \partial_t\bfu'
+  =
+  -U\partial_x\bfu'
+  -u'_z U'\bm{e}_x
+  -\nabla p'
+  +
+  \frac{1}{Re_{\tau}}\Delta\bfu'
+  +
+  \bff',
+  \label{eq:resolvent_linearized_physical}
+\end{equation}
+where \(\bff'\) is a generic harmonic forcing representing the nonlinear
+forcing residual in a resolvent interpretation. Equation
+\eqref{eq:resolvent_linearized_physical} follows term by term from
+\((U\bm{e}_x+\bfu')\cdot\nabla(U\bm{e}_x+\bfu')\): retaining only terms linear
+in \(\bfu'\) gives \(U\partial_x\bfu'\) from advection of the perturbation by
+the mean and \(u'_z U'\bm{e}_x\) from wall-normal displacement of the mean
+profile.
+
+Substituting the spatial harmonic in
+Eq.~\eqref{eq:resolvent_spatial_harmonic} gives
+\[
+  \partial_x \mapsto \ii\kappa,\qquad
+  \partial_y \mapsto \ii\lambda,\qquad
+  \Delta \mapsto
+  \partial_{zz}-(\kappa^2+\lambda^2).
+\]
+The wall-normal second derivative is represented by
+\begin{equation}
+  D_2=\Dz\Dz.
+  \label{eq:resolvent_d2_definition}
+\end{equation}
+If \(\alpha^2=\kappa^2+\lambda^2\), the pressure-free part of the discrete
+linearized velocity operator is therefore
+\begin{equation}
+  L_{\mathrm{raw}}\bfq
+  =
+  -\ii\kappa U\bfq
+  -
+  q_z U'\bm{e}_x
+  +
+  \frac{1}{Re_{\tau}}
+  \left(D_2-\alpha^2 I\right)\bfq.
+  \label{eq:resolvent_lraw_vector}
+\end{equation}
+The notation in Eq.~\eqref{eq:resolvent_lraw_vector} is level-major: the first
+term multiplies all three velocity components at each \(z_m\) by
+\(-\ii\kappa U_m\), the lift-up term adds \(-U'_m q_z(z_m)\) only to the
+streamwise component, and the viscous scalar operator \(D_2-\alpha^2I\) is
+applied independently to each velocity component.
+
+The pressure term does no work against exactly divergence-free no-slip test
+functions. In continuous form, if \(\bfv\) is incompressible and satisfies
+\(\bfv=\bfzero\) at the walls and periodicity in \(x,y\), then
+\begin{align}
+  \int_{\Omega}\bfv^*\cdot\nabla p\,\dd\Omega
+  &=
+  \int_{\partial\Omega} p\,\bfv^*\cdot\bm{n}\,\dd S
+  -
+  \int_{\Omega}p\,\nabla\cdot\bfv^*\,\dd\Omega
+  =
+  0.
+  \label{eq:resolvent_pressure_orthogonality}
+\end{align}
+The implemented proof of concept uses the corresponding velocity-only
+admissible-subspace formulation: construct \(L_{\mathrm{raw}}\) from
+Eq.~\eqref{eq:resolvent_lraw_vector}, restrict both trial and test vectors to
+the columns of \(Q\), and form
+\begin{equation}
+  A = Q^*W_qL_{\mathrm{raw}}Q.
+  \label{eq:resolvent_reduced_operator}
+\end{equation}
+The matrix \(A\in\mathbb{C}^{r\times r}\) is the reduced generator used by
+the single-mode resolvent solver.
+
+\subsection{Resolvent sign convention and singular modes}
+
+Let \(\bfa(t)\) be the reduced velocity coordinate and let \(\bfb(t)\) be the
+reduced forcing coordinate. With the projection above,
+\begin{equation}
+  \frac{\dd \bfa}{\dd t}=A\bfa+\bfb.
+  \label{eq:resolvent_reduced_dynamics}
+\end{equation}
+The implemented Fourier-time convention is
+\begin{equation}
+  \bfa(t)=\widehat{\bfa}\exp(-\ii\omega t),
+  \qquad
+  \bfb(t)=\widehat{\bfb}\exp(-\ii\omega t).
+  \label{eq:resolvent_time_harmonic}
+\end{equation}
+Substituting Eq.~\eqref{eq:resolvent_time_harmonic} into
+Eq.~\eqref{eq:resolvent_reduced_dynamics} gives
+\begin{equation}
+  -\ii\omega\widehat{\bfa}
+  =
+  A\widehat{\bfa}+\widehat{\bfb}.
+  \label{eq:resolvent_harmonic_balance}
+\end{equation}
+Moving the term \(A\widehat{\bfa}\) to the left gives
+\begin{equation}
+  \left(-\ii\omega I-A\right)\widehat{\bfa}
+  =
+  \widehat{\bfb}.
+  \label{eq:resolvent_shifted_system}
+\end{equation}
+Thus the reduced resolvent matrix is
+\begin{equation}
+  H(\omega)
+  =
+  \left(-\ii\omega I-A\right)^{-1},
+  \qquad
+  \widehat{\bfa}=H(\omega)\widehat{\bfb}.
+  \label{eq:resolvent_h_definition}
+\end{equation}
+The singular-value decomposition computed by the code is
+\begin{equation}
+  H(\omega)=\Psi(\omega)\Sigma(\omega)\Phi(\omega)^*,
+  \label{eq:resolvent_svd}
+\end{equation}
+where the diagonal entries of \(\Sigma\) are nonnegative and sorted in
+nonincreasing order. The reduced response modes are the columns of
+\(\Psi\), and the reduced forcing modes are the columns of \(\Phi\). The
+physical velocity modes written to HDF5 are
+\begin{equation}
+  \psi_j^{\mathrm{phys}} = Q\Psi_j,
+  \qquad
+  \phi_j^{\mathrm{phys}} = Q\Phi_j.
+  \label{eq:resolvent_physical_modes}
+\end{equation}
+Because of Eq.~\eqref{eq:resolvent_q_orthonormality_proof} and the Euclidean
+orthonormality of singular vectors, these physical modes satisfy
+\begin{equation}
+  \left(\psi_j^{\mathrm{phys}}\right)^*W_q\psi_k^{\mathrm{phys}}
+  =
+  \delta_{jk},
+  \qquad
+  \left(\phi_j^{\mathrm{phys}}\right)^*W_q\phi_k^{\mathrm{phys}}
+  =
+  \delta_{jk}.
+  \label{eq:resolvent_physical_mode_normalization}
+\end{equation}
+
+The wall-normal energy-density diagnostic for a response mode is
+\begin{equation}
+  e_j(z_m;\omega)
+  =
+  \left|\psi_{j,x}^{\mathrm{phys}}(z_m;\omega)\right|^2
+  +
+  \left|\psi_{j,y}^{\mathrm{phys}}(z_m;\omega)\right|^2
+  +
+  \left|\psi_{j,z}^{\mathrm{phys}}(z_m;\omega)\right|^2.
+  \label{eq:resolvent_energy_density}
+\end{equation}
+The component densities are the three terms in
+Eq.~\eqref{eq:resolvent_energy_density}. The integrated mode energy is
+\(\sum_m w_m e_j(z_m;\omega)\), which equals one up to roundoff for stored
+response modes.
+
+For \(\kappa\neq0\), the phase speed is
+\begin{equation}
+  c=\frac{\omega}{\kappa}.
+  \label{eq:resolvent_phase_speed}
+\end{equation}
+Critical-layer locations are roots of
+\begin{equation}
+  U(z_c)=c.
+  \label{eq:resolvent_critical_layer}
+\end{equation}
+The implementation sorts the Chebyshev-Gauss nodes by \(z\), searches for
+sign changes in \(U(z)-c\), and linearly interpolates each crossing. If
+\(\kappa=0\), Eq.~\eqref{eq:resolvent_phase_speed} has no finite phase speed,
+so the critical-layer table is deliberately empty.
+
+\subsection{Mode-resolved DNS temporal CSD}
+
+For comparison with the resolvent response modes, the workflow estimates a
+temporal CSD matrix for selected horizontal modes. For one selected mode, let
+\(\bfq_n\in\mathbb{C}^{3N_z}\) be the modal DNS velocity fluctuation at
+sample time \(t_n\). The series can come directly from the target dataset
+\(\texttt{modal/u\_hat}\), or it can be computed on the fly from raw velocity
+snapshots by subtracting the target mean profile and taking only the requested
+horizontal Fourier coefficients.
+
+If temporal demeaning is requested, the selected-record mean is removed before
+segmentation:
+\begin{equation}
+  \bfq_n \leftarrow
+  \bfq_n
+  -
+  \frac{1}{N_t}\sum_{\ell=0}^{N_t-1}\bfq_{\ell}.
+  \label{eq:resolvent_temporal_demean}
+\end{equation}
+Let a segment have length \(L\), sample spacing \(\Delta t_s\), start index
+\(s\), and temporal window \(g_n\), \(n=0,\ldots,L-1\). The unnormalized temporal
+DFT used by \(\texttt{numpy.fft.fft}\) is
+\begin{equation}
+  \widehat{\bfq}^{(s)}_k
+  =
+  \sum_{n=0}^{L-1}
+  g_n\bfq_{s+n}
+  \exp\left(-2\pi\ii kn/L\right),
+  \qquad k=0,\ldots,L-1.
+  \label{eq:resolvent_csd_dft}
+\end{equation}
+The corresponding two-sided angular frequencies are
+\begin{equation}
+  \omega_k = 2\pi\,\mathrm{fftfreq}(L,\Delta t_s)_k,
+  \label{eq:resolvent_csd_frequency_grid}
+\end{equation}
+and are stored sorted in ascending order. If there are \(N_{\mathrm{seg}}\)
+segments and
+\begin{equation}
+  E_g=\sum_{n=0}^{L-1}g_n^2,
+  \label{eq:resolvent_window_energy}
+\end{equation}
+then the implemented CSD estimator is
+\begin{equation}
+  S_{qq}(\omega_k)
+  =
+  \frac{\Delta t_s}{E_g N_{\mathrm{seg}}}
+  \sum_{s=1}^{N_{\mathrm{seg}}}
+  \widehat{\bfq}^{(s)}_k
+  \left(\widehat{\bfq}^{(s)}_k\right)^*.
+  \label{eq:resolvent_csd_estimator}
+\end{equation}
+This normalization is chosen so that Parseval's identity has the expected
+weighted-energy form. With the unnormalized DFT in
+Eq.~\eqref{eq:resolvent_csd_dft},
+\begin{equation}
+  \sum_{k=0}^{L-1}
+  \left(\widehat{\bfq}^{(s)}_k\right)^*W_q
+  \widehat{\bfq}^{(s)}_k
+  =
+  L\sum_{n=0}^{L-1}g_n^2\bfq_{s+n}^*W_q\bfq_{s+n}.
+  \label{eq:resolvent_csd_parseval_dft}
+\end{equation}
+The frequency spacing is
+\begin{equation}
+  \Delta\omega=\frac{2\pi}{L\Delta t_s}.
+  \label{eq:resolvent_csd_delta_omega}
+\end{equation}
+Using Eqs.~\eqref{eq:resolvent_csd_estimator} and
+\eqref{eq:resolvent_csd_delta_omega},
+\begin{align}
+  \frac{1}{2\pi}
+  \sum_{k=0}^{L-1}
+  \mathrm{tr}\!\left(W_qS_{qq}(\omega_k)\right)
+  \Delta\omega
+  &=
+  \frac{1}{2\pi}
+  \sum_{k=0}^{L-1}
+  \frac{\Delta t_s}{E_gN_{\mathrm{seg}}}
+  \sum_s
+  \left(\widehat{\bfq}^{(s)}_k\right)^*W_q
+  \widehat{\bfq}^{(s)}_k
+  \frac{2\pi}{L\Delta t_s}
+  \nonumber\\
+  &=
+  \frac{1}{E_gN_{\mathrm{seg}}}
+  \sum_s
+  \frac{1}{L}
+  \sum_{k=0}^{L-1}
+  \left(\widehat{\bfq}^{(s)}_k\right)^*W_q
+  \widehat{\bfq}^{(s)}_k
+  \nonumber\\
+  &=
+  \frac{1}{E_gN_{\mathrm{seg}}}
+  \sum_s
+  \sum_{n=0}^{L-1}
+  g_n^2\bfq_{s+n}^*W_q\bfq_{s+n}.
+  \label{eq:resolvent_csd_parseval_result}
+\end{align}
+Thus the integrated CSD energy equals the window-weighted segment-average
+modal energy. For a rectangular window and one full-record segment, this is
+the ordinary selected-record time-mean modal energy. For Hann-windowed,
+overlapping production estimates, Eq.~\eqref{eq:resolvent_csd_parseval_result}
+is still the diagnostic being checked, but it is a window-weighted
+segment-average identity rather than an unwindowed whole-record variance.
+
+\subsection{Projection of DNS CSD onto response modes}
+
+At a frequency where both the resolvent and DNS CSD are available, let
+\[
+  \Psi_r =
+  \begin{bmatrix}
+  \psi_1^{\mathrm{phys}} & \cdots & \psi_r^{\mathrm{phys}}
+  \end{bmatrix}
+  \in\mathbb{C}^{3N_z\times r}
+\]
+be the first \(r\) stored response modes. The columns satisfy
+\(\Psi_r^*W_q\Psi_r=I_r\). The total DNS spectral energy at that frequency is
+\begin{equation}
+  E_{\mathrm{DNS}}(\omega)
+  =
+  \mathrm{tr}\!\left(W_qS_{qq}(\omega)\right).
+  \label{eq:resolvent_projection_total_energy}
+\end{equation}
+The response-basis coefficient matrix is
+\begin{equation}
+  C_r(\omega)
+  =
+  \Psi_r^*W_qS_{qq}(\omega)W_q\Psi_r.
+  \label{eq:resolvent_projection_coefficients}
+\end{equation}
+To see why Eq.~\eqref{eq:resolvent_projection_coefficients} is the correct
+coefficient matrix, define the rank-\(r\) CSD reconstruction
+\begin{equation}
+  S_r(\omega)=\Psi_r C_r(\omega)\Psi_r^*.
+  \label{eq:resolvent_projection_reconstruction}
+\end{equation}
+Taking its weighted trace and using cyclic invariance gives
+\begin{align}
+  \mathrm{tr}\!\left(W_qS_r\right)
+  &=
+  \mathrm{tr}\!\left(W_q\Psi_r C_r\Psi_r^*\right)
+  =
+  \mathrm{tr}\!\left(\Psi_r^*W_q\Psi_r C_r\right)
+  =
+  \mathrm{tr}\!\left(C_r\right),
+  \label{eq:resolvent_projection_energy_trace}
+\end{align}
+because \(\Psi_r^*W_q\Psi_r=I_r\). Therefore the DNS energy associated with
+the \(j\)-th response direction is the \(j\)-th diagonal entry of \(C_r\):
+\begin{equation}
+  E_j(\omega)
+  =
+  \left(C_r(\omega)\right)_{jj}
+  =
+  \left(\psi_j^{\mathrm{phys}}\right)^*
+  W_qS_{qq}(\omega)W_q
+  \psi_j^{\mathrm{phys}}.
+  \label{eq:resolvent_projection_single_energy}
+\end{equation}
+The rank-one and cumulative rank-\(r\) fractions reported by the code are
+\begin{equation}
+  F_j(\omega)
+  =
+  \frac{\mathrm{Re}\,E_j(\omega)}
+       {E_{\mathrm{DNS}}(\omega)},
+  \qquad
+  F_{\le r}(\omega)
+  =
+  \frac{\mathrm{Re}\,\mathrm{tr}\,C_r(\omega)}
+       {E_{\mathrm{DNS}}(\omega)}.
+  \label{eq:resolvent_projection_fractions}
+\end{equation}
+The implementation also reports the weighted Frobenius relative error of
+Eq.~\eqref{eq:resolvent_projection_reconstruction},
+\begin{equation}
+  \epsilon_r(\omega)
+  =
+  \frac{
+  \left\|
+    W_q^{1/2}\left[S_{qq}(\omega)-S_r(\omega)\right]W_q^{1/2}
+  \right\|_F}
+  {
+  \left\|
+    W_q^{1/2}S_{qq}(\omega)W_q^{1/2}
+  \right\|_F}.
+  \label{eq:resolvent_projection_frobenius_error}
+\end{equation}
+Before projection, frequencies are matched exactly to the selected CSD grid
+within a prescribed tolerance; a mismatch is treated as an error rather than
+interpolated silently.
+
+\subsection{Implemented scripts and HDF5 outputs}
+
+The framework is implemented by the scripts listed in
+Table~\ref{tab:resolvent_implemented_scripts}.
+
+\begin{table}[H]
+  \centering
+  \caption{Main scripts in the selected-mode channel-resolvent workflow.}
+  \label{tab:resolvent_implemented_scripts}
+  \begin{tabular}{p{0.44\linewidth}p{0.48\linewidth}}
+    \toprule
+    Script & Role \\
+    \midrule
+    \path{mkm_channel_resolvent_utils.py}
+      & Shared constraints, weights, bases, operators, and diagnostics. \\
+    \path{compute_mkm_channel_resolvent.py}
+      & Single-mode resolvent HDF5 writer. \\
+    \path{plot_mkm_channel_resolvent.py}
+      & Mode-shape, gain, critical-layer, and reconstructed-field PDFs. \\
+    \path{compute_mkm_modal_csd.py}
+      & Selected-mode temporal DNS CSD estimator. \\
+    \path{project_mkm_dns_onto_resolvent.py}
+      & DNS CSD projection fractions. \\
+    \path{run_mkm_channel_resolvent_selected_modes.py}
+      & Selected-mode workflow driver. \\
+    \path{run_mkm_channel_resolvent_production_selected_modes.py}
+      & Production wrapper with server paths and missing-file checks. \\
+    \path{report_mkm_channel_resolvent_workflow.py}
+      & Markdown audit report generator. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+The single-mode resolvent HDF5 file contains the groups in
+Table~\ref{tab:resolvent_hdf5_schema}. The CSD and projection files contain
+the groups in Tables~\ref{tab:csd_hdf5_schema} and
+\ref{tab:projection_hdf5_schema}.
+
+\begin{table}[H]
+  \centering
+  \caption{Main HDF5 datasets written by the single-mode resolvent solver.}
+  \label{tab:resolvent_hdf5_schema}
+  \begin{tabular}{p{0.36\linewidth}p{0.56\linewidth}}
+    \toprule
+    Dataset & Meaning \\
+    \midrule
+    \path{geometry/z_wall}, \path{geometry/k_stream}, \path{geometry/k_span}
+      & Wall-normal grid and horizontal wavenumber arrays. \\
+    \path{mean/U}, \path{mean/Uprime}
+      & Turbulent mean profile and \(U'=\Dz U\). \\
+    \path{mode/index}, \path{mode/kappa}, \path{mode/lambda}
+      & Selected mode indices and physical wavenumbers. \\
+    \path{frequencies/omega}
+      & Stored angular frequencies. \\
+    \path{critical_layers/z},
+    \path{critical_layers/y_plus_nearest_wall},
+    \path{critical_layers/count}
+      & Roots of \(U(z)=\omega/\kappa\), corresponding nearest-wall
+      \(y^+\), and root counts. \\
+    \path{resolvent/singular_values}
+      & Diagonal entries of \(\Sigma(\omega)\). \\
+    \path{resolvent/response_modes},
+    \path{resolvent/forcing_modes}
+      & \(W_q\)-normalized physical modes \(Q\Psi_j\) and \(Q\Phi_j\). \\
+    \path{resolvent/response_energy_density},
+    \path{resolvent/component_energy_density}
+      & Unweighted pointwise densities
+      \(e_j(z_m)\) and component contributions. \\
+    \path{diagnostics/*}
+      & Constraint residuals, energy-norm errors, basis
+      orthonormality error, resolvent condition numbers, and constraint
+      singular values. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Main HDF5 datasets written by the selected-mode CSD estimator.}
+  \label{tab:csd_hdf5_schema}
+  \begin{tabular}{p{0.36\linewidth}p{0.56\linewidth}}
+    \toprule
+    Dataset & Meaning \\
+    \midrule
+    \path{mode/index}, \path{mode/k_stream}, \path{mode/k_span}
+      & Selected mode rows and physical wavenumbers. \\
+    \path{frequencies/omega}
+      & Sorted two-sided angular frequency grid. \\
+    \path{csd/Sqq}
+      & \(S_{qq}\), shape
+      \((N_{\mathrm{mode}},N_{\omega},3N_z,3N_z)\). \\
+    \path{csd/trace}
+      & Ordinary matrix trace of \(S_{qq}\). \\
+    \path{csd/component_trace}
+      & Wall-normal-weighted component energy spectra. \\
+    \path{csd/energy_trace}
+      & \(\mathrm{tr}(W_qS_{qq})\). \\
+    \path{metadata/*}
+      & Selected times, snapshot keys, window, window energy, sample
+      spacing, segment length, overlap, source, and demeaning flag. \\
+    \path{diagnostics/parseval_energy_time},
+    \path{diagnostics/parseval_energy_spectrum},
+    \path{diagnostics/parseval_relative_error}
+      & The two sides of Eq.~\eqref{eq:resolvent_csd_parseval_result} and
+      their relative difference. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Main HDF5 datasets written by the DNS-to-resolvent projection.}
+  \label{tab:projection_hdf5_schema}
+  \begin{tabular}{p{0.36\linewidth}p{0.56\linewidth}}
+    \toprule
+    Dataset & Meaning \\
+    \midrule
+    \path{mode/index}, \path{mode/k_stream}, \path{mode/k_span}
+      & Matched single resolvent mode. \\
+    \path{frequencies/resolvent_omega},
+    \path{frequencies/csd_omega},
+    \path{frequencies/csd_index}
+      & Resolvent frequencies, matched CSD frequencies, and CSD grid
+      indices. \\
+    \path{projection/energy_total}
+      & \(E_{\mathrm{DNS}}=\mathrm{tr}(W_qS_{qq})\). \\
+    \path{projection/energy_fraction}
+      & \(F_j\) in Eq.~\eqref{eq:resolvent_projection_fractions}. \\
+    \path{projection/cumulative_energy_fraction}
+      & \(F_{\le r}\) for ranks \(1,\ldots,r_{\max}\). \\
+    \path{projection/modal_coefficients}
+      & \(C_r=\Psi_r^*W_qS_{qq}W_q\Psi_r\). \\
+    \path{projection/weighted_frobenius_relative_error}
+      & \(\epsilon_r\) from
+      Eq.~\eqref{eq:resolvent_projection_frobenius_error}. \\
+    \path{diagnostics/*}
+      & Frequency match errors, mode match error, response norm errors,
+      and negative-fraction counts. \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+The plotting script reads the physical response and forcing modes and writes
+four PDFs for each selected mode:
+\begin{equation}
+\begin{aligned}
+  &\texttt{mkm\_resolvent\_mode\_shapes.pdf},\\
+  &\texttt{mkm\_resolvent\_gain\_bode.pdf},\\
+  &\texttt{mkm\_resolvent\_peak\_location\_gain.pdf},\\
+  &\texttt{mkm\_resolvent\_reconstructed\_fields.pdf}.
+\end{aligned}
+\label{eq:resolvent_pdf_outputs}
+\end{equation}
+The reconstructed fields use
+\begin{equation}
+  u_{\alpha}^{\mathrm{real}}(x,y,z)
+  =
+  \mathrm{Re}
+  \left[
+    \psi_{\alpha}(z)
+    \exp\left(\ii(\kappa x+\lambda y+\varphi)\right)
+  \right],
+  \qquad \alpha\in\{x,y,z\},
+  \label{eq:resolvent_reconstructed_field}
+\end{equation}
+where \(\varphi\) is the requested plotting phase.
+
+\subsection{Production selected-mode runs}
+
+Two production selected-mode workflows have been completed. Both used the
+production target
+\begin{center}
+  \path{/media/jay/data1/shenfun_dns_runs/production_mkm_64_64_32_20260702/MKM_production_64_64_32_target_t60_t180.h5}
+\end{center}
+and the matching Chebyshev/quadrature constraint file. The selected modes were
+\begin{equation}
+  (p,q)=(1,0),\qquad (1,1),\qquad (2,1).
+  \label{eq:resolvent_selected_modes}
+\end{equation}
+Since \(L_x=2\pi\) and \(L_y=\pi\), these correspond to
+\[
+  (\kappa,\lambda)=(1,0),\qquad (1,2),\qquad (2,2).
+\]
+The sparse target-CSD run used the stored target \(\texttt{modal/u\_hat}\)
+series. The dense temporal-CSD run used selected horizontal modes computed
+from the dense raw velocity continuation. Table~\ref{tab:resolvent_csd_sources}
+summarizes the two CSD sources.
+
+\begin{table}[H]
+  \centering
+  \caption{CSD sources used in the completed production selected-mode
+  resolvent workflows.}
+  \label{tab:resolvent_csd_sources}
+  \small
+  \begin{tabular}{p{0.18\linewidth}p{0.20\linewidth}p{0.16\linewidth}ccc}
+    \toprule
+    Run & Source & Record & \(\Delta t_s\) & Segment length & Segments \\
+    \midrule
+    Sparse target CSD
+      & \(\texttt{modal/u\_hat}\)
+      & \(60\le t\le180\)
+      & \(0.1\)
+      & \(512\)
+      & \(3\) \\
+    Dense temporal CSD
+      & raw selected FFT modes
+      & \(180\le t\le300\)
+      & \(0.01\)
+      & \(2048\)
+      & \(10\) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Both production CSD estimates used a Hann window and selected-record temporal
+demeaning. The sparse target run used the first four positive CSD bins,
+\begin{equation}
+  \omega =
+  0.122718,\;0.245437,\;0.368155,\;0.490874,
+  \label{eq:resolvent_sparse_omega}
+\end{equation}
+while the dense temporal run used the first six positive dense-CSD bins,
+\begin{equation}
+  \omega =
+  0.306796,\;0.613592,\;0.920388,\;1.227185,\;1.533981,\;1.840777.
+  \label{eq:resolvent_dense_omega}
+\end{equation}
+The two frequency grids are different; the comparison below should therefore
+be read as a trend and infrastructure check, not as a pointwise same-frequency
+comparison.
+
+Table~\ref{tab:resolvent_sparse_results} gives the sparse target-CSD results.
+Table~\ref{tab:resolvent_dense_results} gives the dense temporal-CSD results.
+The gain range is the range of the leading singular value over the stored
+frequencies. The projection columns report the maximum rank-one fraction
+\(F_1\) and the maximum cumulative rank-six fraction \(F_{\le6}\) over the
+stored frequencies.
+
+\begin{table}[H]
+  \centering
+  \caption{Sparse target-CSD selected-mode resolvent results.}
+  \label{tab:resolvent_sparse_results}
+  \begin{tabular}{lcccc}
+    \toprule
+    Mode & \((\kappa,\lambda)\) & Leading gain range
+      & \(\max F_1\) & \(\max F_{\le6}\) \\
+    \midrule
+    \((1,0)\) & \((1,0)\) & \(0.145890\)--\(0.152295\)
+      & \(0.123227\) at \(\omega=0.368155\)
+      & \(0.407893\) at \(\omega=0.368155\) \\
+    \((1,1)\) & \((1,2)\) & \(0.183654\)--\(0.193115\)
+      & \(0.161356\) at \(\omega=0.245437\)
+      & \(0.490194\) at \(\omega=0.368155\) \\
+    \((2,1)\) & \((2,2)\) & \(0.092078\)--\(0.094563\)
+      & \(0.059074\) at \(\omega=0.245437\)
+      & \(0.265905\) at \(\omega=0.368155\) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{table}[H]
+  \centering
+  \caption{Dense temporal-CSD selected-mode resolvent results.}
+  \label{tab:resolvent_dense_results}
+  \begin{tabular}{lcccc}
+    \toprule
+    Mode & \((\kappa,\lambda)\) & Leading gain range
+      & \(\max F_1\) & \(\max F_{\le6}\) \\
+    \midrule
+    \((1,0)\) & \((1,0)\) & \(0.149034\)--\(0.180371\)
+      & \(0.115051\) at \(\omega=0.613592\)
+      & \(0.335164\) at \(\omega=0.613592\) \\
+    \((1,1)\) & \((1,2)\) & \(0.188284\)--\(0.235934\)
+      & \(0.219378\) at \(\omega=0.306796\)
+      & \(0.422372\) at \(\omega=0.306796\) \\
+    \((2,1)\) & \((2,2)\) & \(0.093306\)--\(0.104738\)
+      & \(0.082318\) at \(\omega=0.613592\)
+      & \(0.356971\) at \(\omega=0.613592\) \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Across these selected low-wavenumber modes, mode \((1,1)\), corresponding to
+\((\kappa,\lambda)=(1,2)\), is the most consistently aligned with the leading
+response mode. The dense temporal estimate raises its maximum rank-one
+projection fraction from approximately \(16\%\) in the sparse target-CSD run
+to approximately \(22\%\). Rank six captures a substantially larger fraction
+than rank one: about \(22\%\)--\(49\%\) in the sparse target-CSD run and about
+\(26\%\)--\(42\%\) in the dense temporal-CSD run over these modes and
+frequencies. A low rank-one fraction does not invalidate the resolvent model;
+it can reflect forcing statistics not aligned with the leading forcing mode,
+finite response rank, low Reynolds number, the short streamwise box, selected
+frequency bins that are not centered on the most energetic CSD bands, and
+finite-sample CSD estimation.
+
+The numerical diagnostics are near roundoff. The maximum CSD Parseval relative
+errors were \(2.93\times10^{-15}\) for the sparse target-CSD run and
+\(6.17\times10^{-15}\) for the dense temporal-CSD run. Across the resolvent
+outputs, the largest response and forcing constraint residuals were below
+\(5\times10^{-15}\), the largest response and forcing energy-normalization
+errors were below \(4\times10^{-15}\), and the projection frequency-match
+errors were zero for the stored frequencies.
+
+\subsection{Representative generated figures}
+
+The workflow wrote a complete four-PDF figure set for every selected mode in
+both the sparse and dense production directories. The local lightweight
+artifacts are under
+\begin{center}
+  \path{scripts/mkm_dns_target/production_reports/target_csd_selected_modes/}
+\end{center}
+and
+\begin{center}
+  \path{scripts/mkm_dns_target/production_reports/dense_csd_selected_modes/}.
+\end{center}
+The large HDF5 products remain on the Linux server and were intentionally not
+copied into the repository.
+
+Figures~\ref{fig:resolvent_target_i1j1} and
+\ref{fig:resolvent_dense_i1j1} show the representative mode \((1,1)\), the
+mode with the strongest leading-response alignment in the comparison above.
+The mode-shape panels plot \(|u_x|\), \(|u_y|\), and \(|u_z|\) versus \(z/h\)
+for the stored response and forcing modes at the selected frequency index.
+The gain panels plot the singular values versus \(\omega\). The peak-location
+panels compare the wall-normal location of maximum leading-response energy
+with stored critical-layer roots. The reconstructed-field panels show real
+physical velocity slices computed from
+Eq.~\eqref{eq:resolvent_reconstructed_field}.
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/target_csd_selected_modes/figures_i1_j1/mkm_resolvent_mode_shapes.pdf}\\
+    \small Mode shapes
+  \end{minipage}\hfill
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/target_csd_selected_modes/figures_i1_j1/mkm_resolvent_gain_bode.pdf}\\
+    \small Singular-value gain curves
+  \end{minipage}
+
+  \vspace{0.8em}
+
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/target_csd_selected_modes/figures_i1_j1/mkm_resolvent_peak_location_gain.pdf}\\
+    \small Peak energy and critical layer
+  \end{minipage}\hfill
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/target_csd_selected_modes/figures_i1_j1/mkm_resolvent_reconstructed_fields.pdf}\\
+    \small Reconstructed physical fields
+  \end{minipage}
+  \caption{Sparse target-CSD selected-mode resolvent figures for mode
+  \((1,1)\), corresponding to \((\kappa,\lambda)=(1,2)\).}
+  \label{fig:resolvent_target_i1j1}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/dense_csd_selected_modes/figures_i1_j1/mkm_resolvent_mode_shapes.pdf}\\
+    \small Mode shapes
+  \end{minipage}\hfill
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/dense_csd_selected_modes/figures_i1_j1/mkm_resolvent_gain_bode.pdf}\\
+    \small Singular-value gain curves
+  \end{minipage}
+
+  \vspace{0.8em}
+
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/dense_csd_selected_modes/figures_i1_j1/mkm_resolvent_peak_location_gain.pdf}\\
+    \small Peak energy and critical layer
+  \end{minipage}\hfill
+  \begin{minipage}{0.48\linewidth}
+    \centering
+    \includegraphics[width=\linewidth]{../production_reports/dense_csd_selected_modes/figures_i1_j1/mkm_resolvent_reconstructed_fields.pdf}\\
+    \small Reconstructed physical fields
+  \end{minipage}
+  \caption{Dense temporal-CSD selected-mode resolvent figures for mode
+  \((1,1)\), corresponding to \((\kappa,\lambda)=(1,2)\).}
+  \label{fig:resolvent_dense_i1j1}
+\end{figure}
+
+The complete local figure set includes the same four PDFs for modes
+\((1,0)\), \((1,1)\), and \((2,1)\) in both CSD-source directories. The
+workflow manifest JSON files record the exact HDF5 paths, frequencies,
+leading singular values, constraint residuals, projection fractions, and
+figure paths. The generated Markdown reports summarize those manifests and
+serve as compact audit records for future production reruns.
 
 \section{Reproducibility remarks}
 
