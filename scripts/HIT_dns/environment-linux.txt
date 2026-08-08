@@ -1,0 +1,10 @@
+# Audited on jay@100.88.70.60 in /home/jay/anaconda3/envs/spectralDNS
+Python==3.12.8
+numpy==1.26.4
+scipy==1.15.0
+h5py==3.12.1  # MPI enabled
+mpi4py==4.0.1
+mpi4py-fft==2.0.6
+shenfun==4.2.2
+spectralDNS==1.4.0
+MPICH==4.2.3
