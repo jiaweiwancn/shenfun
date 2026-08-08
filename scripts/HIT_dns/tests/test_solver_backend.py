@@ -22,3 +22,8 @@ def test_approved_baseline_geometry():
 def test_invalid_mesh_is_rejected():
     with pytest.raises(ValueError):
         DNSParameters(n=63).validate()
+
+
+def test_invalid_backend_is_rejected():
+    with pytest.raises(ValueError):
+        DNSParameters(backend="missing").validate()

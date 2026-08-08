@@ -33,13 +33,14 @@ Tables 2--4 are in `data/`.
 - `spectrum_model.py`: continuous initial $E(k)$ and isotropic $E_{11}^{(1)}$.
 - `deterministic_random.py`: rank-independent Gaussian stream.
 - `mann_initializer.py`: spectral factorization and velocity initialization.
-- `solver_backend.py`: explicit spectralDNS NS/RK4 setup and station landing.
+- `solver_backend.py`: equivalent spectralDNS and pure-Shenfun NS/RK4
+  backends, with exact station landing.
 - `hit_diagnostics.py`: invariants, CFL, bulk statistics, $E$, and $E_{11}$.
 - `hit_io.py`: MPI HDF5 checkpoint/restart and lightweight CSV/JSON products.
 - `run_hit_dns.py`: production and pilot command-line driver.
 - `mpi_initial_condition_check.py`: small MPI initializer/operator gate.
 
-## Linux environment
+## Linux workstation environment
 
 The audited server environment is
 `/home/jay/anaconda3/envs/spectralDNS` and contains MPI-enabled h5py.  Keep one
@@ -62,9 +63,18 @@ Run the small MPI gate with:
 ```bash
 /home/jay/anaconda3/envs/spectralDNS/bin/mpiexec -n 4 \
   /home/jay/anaconda3/envs/spectralDNS/bin/python \
-  mpi_initial_condition_check.py --n 32 --steps 1 \
+  mpi_initial_condition_check.py --backend spectraldns --n 32 --steps 1 \
   --planner-effort FFTW_ESTIMATE
 ```
+
+## CentOS/SLURM environment
+
+The offline CentOS environment contains Shenfun 4.3.0 but not spectralDNS.
+Use the dependency-free `--backend shenfun` path and the staged submission
+package in [`centos_server/README.md`](centos_server/README.md).  The two
+backends produced bitwise-identical four-rank `32^3` checkpoints after six
+RK4 steps.  The CentOS jobs preserve the validated environment, run at most
+32 MPI ranks, and keep all raw HDF5 files on the server.
 
 ## Production command template
 
@@ -75,6 +85,7 @@ recorded with `--git-commit`.
 ```bash
 /home/jay/anaconda3/envs/spectralDNS/bin/mpiexec -n 32 \
   /home/jay/anaconda3/envs/spectralDNS/bin/python run_hit_dns.py \
+  --backend spectraldns \
   --n 384 --length-cm 31.41592653589793 \
   --viscosity-cm2-s 0.14941176470588236 \
   --dt-s 1e-4 --stations 42,98,171 \

@@ -102,3 +102,29 @@ unresolved.
 
 After every stage, report the completed artifacts, checks, and any deviations
 before proceeding.
+
+## Execution status and CentOS migration (2026-08-08)
+
+The first workstation production process was terminated at the user's request
+after 51 minutes.  SIGTERM was sent to the resolved MPI launcher, all 32 worker
+processes exited, and the process wrapper recorded exit status 15.  The latest
+complete diagnostic was step 300 at elapsed DNS time 0.03 s: CFL 0.38498,
+$k_{max}\eta=1.25883$, relative divergence $6.62\times10^{-16}$, and Parseval
+error $1.64\times10^{-16}$.  The station-42 raw field remains on the Linux
+server.  No periodic checkpoint had yet been written, so this partial run is
+not a production restart source.
+
+The recurring workstation monitor was deleted.  Execution is being migrated
+to the validated CentOS 7/SLURM installation.  Because that immutable offline
+environment includes Shenfun 4.3.0 but not spectralDNS, `solver_backend.py`
+now provides a pure-Shenfun implementation of the same rotational,
+Leray-projected, 3/2-dealiased RK4 operator.  On the Linux test host, the
+Shenfun and spectralDNS backends produced bitwise-identical four-rank `32^3`
+checkpoints after six RK4 steps (52,224 complex coefficients, maximum absolute
+difference zero); both passed all invariant and nonlinear-energy gates.
+
+The CentOS submission package is documented in
+[`centos_server/README.md`](centos_server/README.md).  Its mandatory sequence
+is MPI smoke, full-shape allocation/operator, 32-rank short pilot, station 98,
+then explicit latest-checkpoint restart to station 171.  CentOS production has
+not been submitted and the final two execution-stage boxes remain unchecked.

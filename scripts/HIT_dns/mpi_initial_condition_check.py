@@ -19,6 +19,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--n", type=int, default=32)
     parser.add_argument("--seed", type=int, default=421971)
     parser.add_argument("--decomposition", choices=("pencil", "slab"), default="pencil")
+    parser.add_argument(
+        "--backend", choices=("spectraldns", "shenfun"), default="spectraldns"
+    )
     parser.add_argument("--planner-effort", default="FFTW_ESTIMATE")
     parser.add_argument("--steps", type=int, default=1)
     return parser.parse_args()
@@ -30,6 +33,7 @@ def main() -> None:
         n=args.n,
         decomposition=args.decomposition,
         planner_effort=args.planner_effort,
+        backend=args.backend,
     )
     solver, context = create_ns_context(settings)
     initialization = initialize_mann_velocity(

@@ -1,8 +1,14 @@
-"""Thin, explicit driver around spectralDNS's dealiased NS operator."""
+"""Dealiased Navier--Stokes backends for the HIT calculation.
+
+The original workstation path uses :mod:`spectralDNS`.  The validated CentOS
+environment intentionally contains only Shenfun, so this module also provides
+the same rotational-form, Leray-projected RK4 operator directly with Shenfun.
+"""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from types import SimpleNamespace
 from typing import Any, Callable
 
 import numpy as np
@@ -21,6 +27,7 @@ class DNSParameters:
     threads: int = 1
     decomposition: str = "pencil"
     planner_effort: str = "FFTW_MEASURE"
+    backend: str = "spectraldns"
 
     def validate(self) -> None:
         if self.n < 8 or self.n % 2:
@@ -31,6 +38,8 @@ class DNSParameters:
             raise ValueError("threads must be positive")
         if self.decomposition not in {"pencil", "slab"}:
             raise ValueError("decomposition must be 'pencil' or 'slab'")
+        if self.backend not in {"spectraldns", "shenfun"}:
+            raise ValueError("backend must be 'spectraldns' or 'shenfun'")
 
     @property
     def shape(self) -> tuple[int, int, int]:
@@ -45,7 +54,57 @@ class DNSParameters:
         return 2.0 * np.pi / self.length_cm
 
 
-def create_ns_context(settings: DNSParameters) -> tuple[Any, Any]:
+class _Context(dict):
+    """Dictionary with attribute access, compatible with spectralDNS contexts."""
+
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+
+
+class _ShenfunNSSolver:
+    """Minimal solver interface used by the common diagnostics and RK4 driver."""
+
+    def __init__(self, settings: DNSParameters) -> None:
+        self.params = SimpleNamespace(
+            nu=float(settings.viscosity_cm2_s),
+            dt=float(settings.dt_s),
+            t=0.0,
+            tstep=0,
+        )
+
+    @staticmethod
+    def ComputeRHS(
+        rhs: Any,
+        u_hat: Any,
+        _solver: Any,
+        **context: Any,
+    ) -> Any:
+        """Return ``P(u x curl(u)) - nu*k^2*u`` on the base grid."""
+
+        k = context["K"]
+        curl_hat = context["curl_hat"]
+        curl_hat[0] = 1j * (k[1] * u_hat[2] - k[2] * u_hat[1])
+        curl_hat[1] = 1j * (k[2] * u_hat[0] - k[0] * u_hat[2])
+        curl_hat[2] = 1j * (k[0] * u_hat[1] - k[1] * u_hat[0])
+
+        context["VTp"].backward(u_hat, context["u_dealias"])
+        context["VTp"].backward(curl_hat, context["curl_dealias"])
+        context["cross_dealias"][...] = np.cross(
+            context["u_dealias"], context["curl_dealias"], axis=0
+        )
+        context["VTp"].forward(context["cross_dealias"], rhs)
+        if context["mask"] is not None:
+            rhs.mask_nyquist(context["mask"])
+
+        pressure = context["P_hat"]
+        pressure[...] = np.sum(rhs * context["K_over_K2"], axis=0)
+        for component in range(3):
+            rhs[component] -= pressure * k[component]
+        rhs -= float(_solver.params.nu) * context["K2"] * u_hat
+        return rhs
+
+
+def _create_spectraldns_context(settings: DNSParameters) -> tuple[Any, Any]:
     """Create the spectralDNS rotational-form, 3/2-dealiased NS context."""
 
     settings.validate()
@@ -86,10 +145,98 @@ def create_ns_context(settings: DNSParameters) -> tuple[Any, Any]:
     return solver, context
 
 
-def create_rk4_stepper(solver: Any, context: Any) -> Callable[[], tuple[Any, float, float]]:
-    """Return spectralDNS's classical RK4 stepper for the supplied context."""
+def _create_shenfun_context(settings: DNSParameters) -> tuple[Any, _Context]:
+    """Create the equivalent operator using only the public Shenfun API."""
 
-    return solver.getintegrator(context.dU, context.u, solver, context)
+    from mpi4py import MPI
+    from shenfun import Array, Function, FunctionSpace, TensorProductSpace, VectorSpace
+
+    bases = (
+        FunctionSpace(settings.n, "F", dtype="D", domain=(0.0, settings.length_cm)),
+        FunctionSpace(settings.n, "F", dtype="D", domain=(0.0, settings.length_cm)),
+        FunctionSpace(settings.n, "F", dtype="d", domain=(0.0, settings.length_cm)),
+    )
+    transform_options = {
+        "threads": settings.threads,
+        "planner_effort": settings.planner_effort,
+    }
+    scalar_space = TensorProductSpace(
+        MPI.COMM_WORLD,
+        bases,
+        dtype=float,
+        slab=settings.decomposition == "slab",
+        collapse_fourier=False,
+        **transform_options,
+    )
+    vector_space = VectorSpace(scalar_space)
+    padded_scalar_space = scalar_space.get_dealiased(padding_factor=1.5)
+    padded_vector_space = VectorSpace(padded_scalar_space)
+
+    wavenumbers = scalar_space.local_wavenumbers(scaled=True)
+    k_squared = np.zeros(scalar_space.shape(True), dtype=float)
+    for component in range(3):
+        wavenumbers[component] = wavenumbers[component].astype(float)
+        k_squared += wavenumbers[component] ** 2
+    k_over_k_squared = np.zeros(vector_space.shape(True), dtype=float)
+    denominator = np.where(k_squared == 0.0, 1.0, k_squared)
+    for component in range(3):
+        k_over_k_squared[component] = wavenumbers[component] / denominator
+
+    context = _Context(
+        T=scalar_space,
+        VT=vector_space,
+        Tp=padded_scalar_space,
+        VTp=padded_vector_space,
+        U=Array(vector_space),
+        U_hat=Function(vector_space),
+        dU=Function(vector_space),
+        P_hat=Function(scalar_space),
+        curl_hat=Function(vector_space),
+        u_dealias=Array(padded_vector_space),
+        curl_dealias=Array(padded_vector_space),
+        cross_dealias=Array(padded_vector_space),
+        K=wavenumbers,
+        K2=k_squared,
+        K_over_K2=k_over_k_squared,
+        mask=scalar_space.get_mask_nyquist(),
+    )
+    return _ShenfunNSSolver(settings), context
+
+
+def create_ns_context(settings: DNSParameters) -> tuple[Any, Any]:
+    """Create the selected rotational-form, 3/2-dealiased NS context."""
+
+    settings.validate()
+    if settings.backend == "spectraldns":
+        return _create_spectraldns_context(settings)
+    return _create_shenfun_context(settings)
+
+
+def create_rk4_stepper(solver: Any, context: Any) -> Callable[[], tuple[Any, float, float]]:
+    """Return a classical RK4 stepper for the supplied context."""
+
+    if hasattr(solver, "getintegrator"):
+        return solver.getintegrator(context.dU, context.u, solver, context)
+
+    u_hat = context.U_hat
+    base = u_hat.copy()
+    result = u_hat.copy()
+    weights = (1.0 / 6.0, 1.0 / 3.0, 1.0 / 3.0, 1.0 / 6.0)
+    stages = (0.5, 0.5, 1.0)
+
+    def step() -> tuple[Any, float, float]:
+        dt = float(solver.params.dt)
+        base[...] = u_hat
+        result[...] = u_hat
+        for rk in range(4):
+            rhs = solver.ComputeRHS(context.dU, u_hat, solver, **context)
+            if rk < 3:
+                u_hat[...] = base + stages[rk] * dt * rhs
+            result[...] += weights[rk] * dt * rhs
+        u_hat[...] = result
+        return u_hat, dt, dt
+
+    return step
 
 
 def advance_to_time(

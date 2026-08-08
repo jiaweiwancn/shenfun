@@ -54,6 +54,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--maximum-cfl", type=float, default=0.5)
     parser.add_argument("--minimum-kmax-eta", type=float, default=1.0)
     parser.add_argument("--decomposition", choices=("pencil", "slab"), default="pencil")
+    parser.add_argument(
+        "--backend",
+        choices=("spectraldns", "shenfun"),
+        default="spectraldns",
+        help="NS implementation; use shenfun in the validated CentOS environment.",
+    )
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--planner-effort", default="FFTW_MEASURE")
     parser.add_argument("--git-commit", default=None)
@@ -153,6 +159,7 @@ def main() -> None:
         threads=args.threads,
         decomposition=args.decomposition,
         planner_effort=args.planner_effort,
+        backend=args.backend,
     )
     settings.validate()
     ensure_directory(args.raw_dir)
@@ -182,9 +189,14 @@ def main() -> None:
             ("n", settings.n),
             ("length_cm", settings.length_cm),
             ("viscosity_cm2_s", settings.viscosity_cm2_s),
+            ("dt_s", settings.dt_s),
         ):
             if not np.isclose(checkpoint_configuration[key], expected):
                 raise ValueError(f"Restart mismatch for {key}")
+        if checkpoint_configuration.get("backend") != settings.backend:
+            raise ValueError("Restart mismatch for backend")
+        if int(checkpoint_configuration.get("seed", -1)) != int(args.seed):
+            raise ValueError("Restart mismatch for seed")
 
     diagnostic_path = args.light_dir / "diagnostics.csv"
 
