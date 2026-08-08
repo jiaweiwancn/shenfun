@@ -68,16 +68,16 @@ Run the small MPI gate with:
 
 ## Production command template
 
-Do not use the placeholder timestep below until the pilot stage has locked it.
-The production process runs only in an isolated Linux execution tree whose
-source commit is recorded with `--git-commit`.
+The pilot suite locked the production timestep at $10^{-4}$ s.  The production
+process runs only in an isolated Linux execution tree whose source commit is
+recorded with `--git-commit`.
 
 ```bash
 /home/jay/anaconda3/envs/spectralDNS/bin/mpiexec -n 32 \
   /home/jay/anaconda3/envs/spectralDNS/bin/python run_hit_dns.py \
   --n 384 --length-cm 31.41592653589793 \
   --viscosity-cm2-s 0.14941176470588236 \
-  --dt-s PILOT_SELECTED_DT --stations 42,98,171 \
+  --dt-s 1e-4 --stations 42,98,171 \
   --seed 421971 --decomposition pencil --threads 1 \
   --maximum-cfl 0.5 --minimum-kmax-eta 1.0 \
   --diagnostics-every 100 --checkpoint-every 1000 \

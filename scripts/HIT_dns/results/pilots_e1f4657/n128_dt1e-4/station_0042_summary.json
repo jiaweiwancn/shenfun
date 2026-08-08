@@ -1,0 +1,114 @@
+{
+  "configuration": {
+    "checkpoint_every": 0,
+    "command": [
+      "/home/jay/anaconda3/envs/spectralDNS/bin/python",
+      "run_hit_dns.py",
+      "--n",
+      "128",
+      "--stations",
+      "42,50",
+      "--dt-s",
+      "1e-4",
+      "--restart",
+      "/media/jay/data1/shenfun_dns_runs/HIT_comte_bellot_1971/pilots_e1f4657/n128_initial/raw/station_0042.h5",
+      "--raw-dir",
+      "/media/jay/data1/shenfun_dns_runs/HIT_comte_bellot_1971/pilots_e1f4657/n128_dt1e-4/raw",
+      "--light-dir",
+      "/media/jay/data1/shenfun_dns_runs/HIT_comte_bellot_1971/pilots_e1f4657/n128_dt1e-4/light",
+      "--diagnostics-every",
+      "100",
+      "--checkpoint-every",
+      "0",
+      "--minimum-kmax-eta",
+      "0",
+      "--planner-effort",
+      "FFTW_ESTIMATE",
+      "--git-commit",
+      "e1f4657ebad808ad6c432f0560d835d59129fd00"
+    ],
+    "decomposition": "pencil",
+    "diagnostics_every": 100,
+    "dt_s": 0.0001,
+    "git_commit": "e1f4657ebad808ad6c432f0560d835d59129fd00",
+    "hostname": "jay",
+    "length_cm": 31.41592653589793,
+    "maximum_cfl": 0.5,
+    "minimum_kmax_eta": 0.0,
+    "mpi_ranks": 16,
+    "n": 128,
+    "planner_effort": "FFTW_ESTIMATE",
+    "seed": 421971,
+    "stations_tU0_over_M": [
+      42.0,
+      50.0
+    ],
+    "threads": 1,
+    "versions": {
+      "h5py": "3.12.1",
+      "mpi4py": "4.0.1",
+      "mpi4py-fft": "2.0.6",
+      "numpy": "1.26.4",
+      "python": "3.12.8",
+      "shenfun": "4.2.2",
+      "spectralDNS": "1.4.0"
+    },
+    "viscosity_cm2_s": 0.14941176470588236
+  },
+  "elapsed_time_s": 0.0,
+  "initialization": {
+    "domain_lengths_cm": [
+      31.41592653589793,
+      31.41592653589793,
+      31.41592653589793
+    ],
+    "global_shape": [
+      128,
+      128,
+      128
+    ],
+    "method": "Mann isotropic spectral factorization",
+    "modeled_integral_energy_cm2_s^-2": 775.3843106323194,
+    "seed": 421971,
+    "spectral_cell_volume_cm^-3": 0.008000000000000002,
+    "tail_fit": {
+      "beta": 3.6114358042297656,
+      "coefficient": 676.2570341225363,
+      "eta_cm": 0.029,
+      "fit_k_min_cm1": 8.0
+    }
+  },
+  "spectrum_closure": {
+    "E11_integral_cm2_s^-2": 489.11807507514004,
+    "E_integral_cm2_s^-2": 753.0203063004938,
+    "kinetic_energy_cm2_s^-2": 753.0203063004936,
+    "u1_variance_cm2_s^-2": 489.1180750751399
+  },
+  "station_tU0_over_M": 42.0,
+  "statistics": {
+    "cfl": 0.1386199759864834,
+    "component_mean_cm_s": [
+      6.938893903907228e-17,
+      -1.1102230246251565e-16,
+      1.1102230246251565e-16
+    ],
+    "component_rms_cm_s": [
+      22.116013996087542,
+      22.587061380504693,
+      22.511046082293934
+    ],
+    "dissipation_cm2_s^-3": 2980.6264213641884,
+    "finite": true,
+    "isotropic_u_rms_cm_s": 22.405658605219852,
+    "kmax_eta": 0.4163146360986438,
+    "kolmogorov_length_cm": 0.03252458094520654,
+    "nominal_kmax_cm^-1": 12.8,
+    "parseval_relative_error": 3.0194892958503865e-16,
+    "physical_energy_cm2_s^-2": 753.0203063004939,
+    "relative_spectral_divergence": 4.3952922018450734e-17,
+    "reynolds_lambda": 92.13293093313827,
+    "spectral_energy_cm2_s^-2": 753.0203063004936,
+    "taylor_microscale_cm": 0.614386929694553
+  },
+  "tstep": 0
+}

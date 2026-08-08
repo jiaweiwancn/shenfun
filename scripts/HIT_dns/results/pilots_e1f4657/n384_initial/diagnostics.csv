@@ -1,0 +1,2 @@
+station_tU0_over_M,time_s,tstep,cfl,kinetic_energy_cm2_s^-2,dissipation_cm2_s^-3,isotropic_u_rms_cm_s,kolmogorov_length_cm,taylor_microscale_cm,reynolds_lambda,kmax_eta,relative_spectral_divergence,parseval_relative_error
+42.0,0.0,0,0.43124394538673855,789.7262720297886,4348.34473222861,22.945243109481154,0.029594268153858315,0.5209172114476402,79.99752951253733,1.1364198971081592,4.3529285793618496e-17,5.75829077735571e-16

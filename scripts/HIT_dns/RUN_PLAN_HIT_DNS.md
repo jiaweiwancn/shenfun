@@ -93,9 +93,9 @@ unresolved.
 - [x] Encode reference data and dimensional mapping.
 - [x] Implement and test the Mann initializer and HIT solver.
 - [x] Add spectra, diagnostics, checkpoint/restart, and documentation.
-- [ ] Commit and push the implementation to `master`.
-- [ ] Prepare isolated Linux execution and run MPI smoke tests.
-- [ ] Run performance/resolution pilots and lock the production timestep.
+- [x] Commit and push the implementation to `master`.
+- [x] Prepare isolated Linux execution and run MPI smoke tests.
+- [x] Run performance/resolution pilots and lock the production timestep.
 - [ ] Run the 32-rank production decay through stations 98 and 171.
 - [ ] Compare with Tables 2--4, copy lightweight results to macOS, verify,
       commit, and push.
