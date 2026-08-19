@@ -25,6 +25,13 @@ from reference_data import (
 
 
 STATIONS = (42.0, 98.0, 171.0)
+BULK_MAPPINGS = (
+    ("u_rms_cm_s", "isotropic_u_rms_cm_s", "u1_rms_cm_s"),
+    ("epsilon_cm2_s3", "dissipation_cm2_s^-3", "epsilon_cm2_s3"),
+    ("eta_cm", "kolmogorov_length_cm", "eta_cm"),
+    ("lambda_cm", "taylor_microscale_cm", "lambda_cm"),
+    ("R_lambda", "reynolds_lambda", "R_lambda"),
+)
 
 
 def station_slug(station: float) -> str:
@@ -83,7 +90,7 @@ def comparison_metrics(dns: np.ndarray, experiment: np.ndarray) -> dict[str, flo
 
 def write_point_rows(path: Path, rows: list[dict[str, Any]]) -> None:
     with path.open("w", newline="") as stream:
-        writer = csv.DictWriter(stream, fieldnames=list(rows[0]))
+        writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 
@@ -138,14 +145,7 @@ def main() -> None:
 
         stats = dns["summary"]["statistics"]
         experimental_bulk = bulk[np.isclose(bulk["station_tU0_over_M"], station)][0]
-        mappings = (
-            ("u_rms_cm_s", "isotropic_u_rms_cm_s", "u_rms_cm_s"),
-            ("epsilon_cm2_s3", "dissipation_cm2_s^-3", "epsilon_cm2_s3"),
-            ("eta_cm", "kolmogorov_length_cm", "eta_cm"),
-            ("lambda_cm", "taylor_microscale_cm", "lambda_cm"),
-            ("R_lambda", "reynolds_lambda", "R_lambda"),
-        )
-        for quantity, dns_name, experiment_name in mappings:
+        for quantity, dns_name, experiment_name in BULK_MAPPINGS:
             observed = float(experimental_bulk[experiment_name])
             simulated = float(stats[dns_name])
             bulk_rows.append(

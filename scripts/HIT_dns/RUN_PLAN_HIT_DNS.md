@@ -5,7 +5,8 @@
 - Origin Skill: experiment-agent
 - Origin Mode: plan, approved for execution
 - Origin Date: 2026-08-08
-- Verification Status: UNVERIFIED until the production run and comparison finish
+- Verification Status: VERIFIED on the completed CentOS production run and
+  experimental/N256 comparison
 - Version Label: hit_dns_plan_v1
 
 ## Objective
@@ -81,7 +82,10 @@ unresolved.
 - Source, small tables, summaries, and figures:
   `scripts/HIT_dns/` in the Git repository.
 - Raw checkpoints and full spectral fields:
-  `/media/jay/data1/shenfun_dns_runs/HIT_comte_bellot_1971/` on Linux only.
+  `/share/home/dkyzdsys_wanjiawei/shenfun_runs/hit_dns/production_hit_N384_dt1em4_shenfun/raw/`
+  on the CentOS server only. The terminated workstation attempt remains under
+  `/media/jay/data1/shenfun_dns_runs/HIT_comte_bellot_1971/` and is not a
+  production result.
 - The dirty Linux checkout at `/media/jay/data1/shenfun` is not pulled into or
   cleaned. Execution uses an isolated worktree or a checksum-verified copy.
 - The repository's actual default branch is `master`; approved milestones are
@@ -96,8 +100,8 @@ unresolved.
 - [x] Commit and push the implementation to `master`.
 - [x] Prepare isolated Linux execution and run MPI smoke tests.
 - [x] Run performance/resolution pilots and lock the production timestep.
-- [ ] Run the 32-rank production decay through stations 98 and 171.
-- [ ] Compare with Tables 2--4, copy lightweight results to macOS, verify,
+- [x] Run the 32-rank production decay through stations 98 and 171.
+- [x] Compare with Tables 2--4, copy lightweight results to macOS, verify,
       commit, and push.
 
 After every stage, report the completed artifacts, checks, and any deviations
@@ -124,7 +128,30 @@ checkpoints after six RK4 steps (52,224 complex coefficients, maximum absolute
 difference zero); both passed all invariant and nonlinear-energy gates.
 
 The CentOS submission package is documented in
-[`centos_server/README.md`](centos_server/README.md).  Its mandatory sequence
+[`centos_server/README.md`](centos_server/README.md). Its mandatory sequence
 is MPI smoke, full-shape allocation/operator, 32-rank short pilot, station 98,
-then explicit latest-checkpoint restart to station 171.  CentOS production has
-not been submitted and the final two execution-stage boxes remain unchecked.
+then explicit latest-checkpoint restart to station 171.
+
+## Final CentOS production result (2026-08-19)
+
+All mandatory CentOS gates completed: jobs 3359, 3360, and 3361 passed the MPI,
+full-shape, and 11-step checks; job 3362 advanced station 42 to 98; and job 3363
+restarted from the inspector-validated `station_0098.h5` checkpoint and reached
+station 171. The final state is at elapsed time 0.65532 s and step 6554. The
+combined 68-row diagnostic history is strictly ordered and has monotonically
+decreasing kinetic energy. Across the production trajectory, the maximum CFL
+is 0.43124, minimum $k_{max}\eta$ is 1.13642, maximum relative divergence is
+$2.60\times10^{-15}$, and maximum Parseval error is $5.52\times10^{-16}$.
+
+Only the 44 KiB lightweight return archive was copied to macOS; its SHA-256 is
+`2e027dcca3703bee983ce200678b45fe48a8e0c37c79488603a2abc6f58f725d`.
+Every embedded checksum passed, the returned error log is empty, and the
+archive contains no HDF5 file. The comparison with Tables 2--4 and the N256
+pilot is reported in
+[`results/lightweight_return_3363/FINAL_REPORT.md`](results/lightweight_return_3363/FINAL_REPORT.md).
+The comparison is descriptive because no experimental-agreement threshold was
+specified in advance. The strongest bulk discrepancy is dissipation, which is
+32.8% above the experiment at station 98 and 23.7% above it at station 171;
+velocity RMS differs by at most 8.1%. N384 versus N256 station-98 spectra are
+close over the common resolved range: median N384/N256 ratios are 1.037 for
+$E$ and 1.024 for $E_{11}^{(1)}$.
